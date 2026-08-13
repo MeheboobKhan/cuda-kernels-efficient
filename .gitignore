@@ -1,0 +1,5 @@
+*.o
+*.out
+tests/validate
+!tests/validate.cpp
+.DS_Store
