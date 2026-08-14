@@ -1,46 +1,46 @@
-[27140] bench.exe@127.0.0.1
+[13800] bench.exe@127.0.0.1
   conv1d_fft::buildHPad(const float *, float *, int, int) (384, 1, 1)x(256, 1, 1), Device 0, CC 7.5, Invocations 2
     Section: Compute Workload Analysis
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.02    1.03    1.03
+    Executed Ipc Active   inst/cycle    1.02    1.03    1.02
     Executed Ipc Elapsed  inst/cycle    0.72    0.72    0.72
-    Issue Slots Busy               %   18.45   18.47   18.46
-    Issued Ipc Active     inst/cycle    1.05    1.07    1.06
-    SM Busy                        %   18.45   18.47   18.46
+    Issue Slots Busy               %   18.49   18.53   18.51
+    Issued Ipc Active     inst/cycle    1.05    1.06    1.05
+    SM Busy                        %   18.49   18.53   18.51
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- -------- -------- --------
     Metric Name             Metric Unit  Minimum  Maximum  Average
     ----------------------- ----------- -------- -------- --------
-    DRAM Frequency                  Ghz     4.88     4.92     4.90
-    SM Frequency                    Ghz     1.16     1.17     1.16
-    Elapsed Cycles                cycle 4,372.00 4,376.00 4,374.00
-    Memory Throughput                 %    40.55    61.79    51.17
-    DRAM Throughput                   %    13.86    61.79    37.83
+    DRAM Frequency                  Ghz     4.88     5.06     4.97
+    SM Frequency                    Ghz     1.17     1.17     1.17
+    Elapsed Cycles                cycle 4,401.00 4,418.00 4,409.50
+    Memory Throughput                 %    40.38    57.05    48.71
+    DRAM Throughput                   %    13.96    57.05    35.50
     Duration                         us     3.74     3.78     3.76
-    L1/TEX Cache Throughput           %    35.65    35.68    35.67
-    L2 Cache Throughput               %    40.55    40.56    40.56
-    SM Active Cycles              cycle 3,047.69 3,081.50 3,064.59
-    Compute (SM) Throughput           %    18.45    18.47    18.46
+    L1/TEX Cache Throughput           %    35.75    35.81    35.78
+    L2 Cache Throughput               %    40.17    40.38    40.28
+    SM Active Cycles              cycle 3,069.31 3,088.81 3,079.06
+    Compute (SM) Throughput           %    18.49    18.53    18.51
     ----------------------- ----------- -------- -------- --------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ----------- ----------- -----------
     Metric Name                Metric Unit     Minimum     Maximum     Average
     -------------------------- ----------- ----------- ----------- -----------
-    Average DRAM Active Cycles       cycle    2,555.00   11,389.00    6,972.00
-    Total DRAM Elapsed Cycles        cycle   73,728.00   73,728.00   73,728.00
-    Average L1 Active Cycles         cycle    3,047.69    3,081.50    3,064.59
-    Total L1 Elapsed Cycles          cycle   70,352.00   70,408.00   70,380.00
-    Average L2 Active Cycles         cycle    2,557.38    2,616.75    2,587.06
-    Total L2 Elapsed Cycles          cycle   33,720.00   33,720.00   33,720.00
-    Average SM Active Cycles         cycle    3,047.69    3,081.50    3,064.59
-    Total SM Elapsed Cycles          cycle   70,352.00   70,408.00   70,380.00
-    Average SMSP Active Cycles       cycle    3,004.61    3,007.66    3,006.13
-    Total SMSP Elapsed Cycles        cycle 2,81,408.00 2,81,632.00 2,81,520.00
+    Average DRAM Active Cycles       cycle    2,645.00   10,515.00    6,580.00
+    Total DRAM Elapsed Cycles        cycle   73,728.00   75,776.00   74,752.00
+    Average L1 Active Cycles         cycle    3,069.31    3,088.81    3,079.06
+    Total L1 Elapsed Cycles          cycle   70,112.00   70,248.00   70,180.00
+    Average L2 Active Cycles         cycle    2,552.50    2,614.38    2,583.44
+    Total L2 Elapsed Cycles          cycle   33,864.00   34,040.00   33,952.00
+    Average SM Active Cycles         cycle    3,069.31    3,088.81    3,079.06
+    Total SM Elapsed Cycles          cycle   70,112.00   70,248.00   70,180.00
+    Average SMSP Active Cycles       cycle    3,028.33    3,083.77    3,056.05
+    Total SMSP Elapsed Cycles        cycle 2,80,448.00 2,80,992.00 2,80,720.00
     -------------------------- ----------- ----------- ----------- -----------
 
     Section: Instruction Statistics
@@ -80,15 +80,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    6.27    6.63    6.45
+    L2 Sector Promotion Misses                        %    6.36    6.63    6.49
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s   21.65   97.34   59.50
-    Mem Busy                                          %   40.55   40.56   40.56
-    Max Bandwidth                                     %   37.86   61.79   49.82
-    L1/TEX Hit Rate                                   %    1.77    1.77    1.77
-    L2 Hit Rate                                       %   92.50   92.53   92.52
-    Mem Pipes Busy                                    %   18.18   18.19   18.19
+    Memory Throughput                           Gbyte/s   22.61   89.11   55.86
+    Mem Busy                                          %   40.17   40.38   40.28
+    Max Bandwidth                                     %   37.59   57.05   47.32
+    L1/TEX Hit Rate                                   %    1.78    1.78    1.78
+    L2 Hit Rate                                       %   92.51   92.69   92.60
+    Mem Pipes Busy                                    %   18.22   18.26   18.24
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -101,15 +101,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   67.04   68.62   67.83
-    Achieved Active Warps Per SM           warp   21.45   21.96   21.70
+    Achieved Occupancy                        %   65.53   65.77   65.65
+    Achieved Active Warps Per SM           warp   20.97   21.05   21.01
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte     65.54     65.54     65.54
+    Maximum Buffer Size             Kbyte     65.54    131.07     98.30
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -118,11 +118,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   27.00   27.03   27.01
-    Issued Warp Per Scheduler                   0.27    0.27    0.27
-    No Eligible                            %   72.97   73.00   72.99
-    Active Warps Per Scheduler          warp    5.09    5.16    5.12
-    Eligible Warps Per Scheduler        warp    0.48    0.48    0.48
+    One or More Eligible                   %   26.33   26.81   26.57
+    Issued Warp Per Scheduler                   0.26    0.27    0.27
+    No Eligible                            %   73.19   73.67   73.43
+    Active Warps Per Scheduler          warp    5.00    5.13    5.07
+    Eligible Warps Per Scheduler        warp    0.46    0.47    0.47
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -148,8 +148,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   18.86   19.08   18.97
-    Warp Cycles Per Executed Instruction           cycle   19.43   19.66   19.55
+    Warp Cycles Per Issued Instruction             cycle   18.99   19.14   19.07
+    Warp Cycles Per Executed Instruction           cycle   19.57   19.73   19.65
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               29.89   29.89   29.89
     ---------------------------------------- ----------- ------- ------- -------
@@ -160,42 +160,42 @@
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
     Executed Ipc Active   inst/cycle    0.58    0.58    0.58
-    Executed Ipc Elapsed  inst/cycle    0.55    0.56    0.55
-    Issue Slots Busy               %   13.82   13.99   13.91
+    Executed Ipc Elapsed  inst/cycle    0.55    0.56    0.56
+    Issue Slots Busy               %   13.96   14.04   14.00
     Issued Ipc Active     inst/cycle    0.58    0.58    0.58
-    SM Busy                        %   13.82   13.99   13.91
+    SM Busy                        %   13.96   14.04   14.00
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.39      4.43      4.41
+    DRAM Frequency                  Ghz      4.38      4.49      4.43
     SM Frequency                    Ghz      1.18      1.18      1.18
-    Elapsed Cycles                cycle 54,918.00 55,207.00 55,062.50
-    Memory Throughput                 %     95.48     96.81     96.14
-    DRAM Throughput                   %     95.48     96.81     96.14
-    Duration                         us     46.27     46.56     46.42
-    L1/TEX Cache Throughput           %     23.97     24.29     24.13
-    L2 Cache Throughput               %     51.75     51.80     51.78
-    SM Active Cycles              cycle 46,738.62 46,844.12 46,791.38
-    Compute (SM) Throughput           %     13.82     13.99     13.91
+    Elapsed Cycles                cycle 54,989.00 55,075.00 55,032.00
+    Memory Throughput                 %     94.35     97.40     95.87
+    DRAM Throughput                   %     94.35     97.40     95.87
+    Duration                         us     46.50     46.50     46.50
+    L1/TEX Cache Throughput           %     24.22     24.34     24.28
+    L2 Cache Throughput               %     51.85     51.87     51.86
+    SM Active Cycles              cycle 46,754.06 46,854.62 46,804.34
+    Compute (SM) Throughput           %     13.96     14.04     14.00
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,95,778.00  1,97,762.00  1,96,770.00
-    Total DRAM Elapsed Cycles        cycle  8,17,152.00  8,20,224.00  8,18,688.00
-    Average L1 Active Cycles         cycle    46,738.62    46,844.12    46,791.38
-    Total L1 Elapsed Cycles          cycle  7,79,840.00  7,89,144.00  7,84,492.00
-    Average L2 Active Cycles         cycle    45,078.62    45,185.12    45,131.88
-    Total L2 Elapsed Cycles          cycle  4,24,384.00  4,26,496.00  4,25,440.00
-    Average SM Active Cycles         cycle    46,738.62    46,844.12    46,791.38
-    Total SM Elapsed Cycles          cycle  7,79,840.00  7,89,144.00  7,84,492.00
-    Average SMSP Active Cycles       cycle    46,275.64    46,665.64    46,470.64
-    Total SMSP Elapsed Cycles        cycle 31,19,360.00 31,56,576.00 31,37,968.00
+    Average DRAM Active Cycles       cycle  1,96,842.00  1,98,469.00  1,97,655.50
+    Total DRAM Elapsed Cycles        cycle  8,15,104.00  8,34,560.00  8,24,832.00
+    Average L1 Active Cycles         cycle    46,754.06    46,854.62    46,804.34
+    Total L1 Elapsed Cycles          cycle  7,76,832.00  7,81,176.00  7,79,004.00
+    Average L2 Active Cycles         cycle    44,766.12    45,066.75    44,916.44
+    Total L2 Elapsed Cycles          cycle  4,24,616.00  4,25,224.00  4,24,920.00
+    Average SM Active Cycles         cycle    46,754.06    46,854.62    46,804.34
+    Total SM Elapsed Cycles          cycle  7,76,832.00  7,81,176.00  7,79,004.00
+    Average SMSP Active Cycles       cycle    46,222.50    46,751.19    46,486.84
+    Total SMSP Elapsed Cycles        cycle 31,07,328.00 31,24,704.00 31,16,016.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -206,8 +206,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst    6,769.83    6,769.83    6,769.83
     Executed Instructions                           inst 4,33,269.00 4,33,269.00 4,33,269.00
-    Avg. Issued Instructions Per Scheduler          inst    6,817.77    6,817.81    6,817.79
-    Issued Instructions                             inst 4,36,337.00 4,36,340.00 4,36,338.50
+    Avg. Issued Instructions Per Scheduler          inst    6,817.73    6,817.80    6,817.77
+    Issued Instructions                             inst 4,36,335.00 4,36,339.00 4,36,337.00
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -235,15 +235,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    0.84    0.90    0.87
+    L2 Sector Promotion Misses                        %    0.77    0.81    0.79
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  135.39  135.92  135.66
-    Mem Busy                                          %   51.75   51.80   51.78
-    Max Bandwidth                                     %   95.48   96.81   96.14
-    L1/TEX Hit Rate                                   %   30.92   32.03   31.47
-    L2 Hit Rate                                       %   45.10   45.31   45.20
-    Mem Pipes Busy                                    %    9.35    9.46    9.40
+    Memory Throughput                           Gbyte/s  135.47  136.59  136.03
+    Mem Busy                                          %   51.85   51.87   51.86
+    Max Bandwidth                                     %   94.35   97.40   95.87
+    L1/TEX Hit Rate                                   %   30.36   30.77   30.57
+    L2 Hit Rate                                       %   47.58   48.05   47.82
+    Mem Pipes Busy                                    %    9.44    9.49    9.47
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -256,15 +256,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   89.68   89.78   89.73
-    Achieved Active Warps Per SM           warp   28.70   28.73   28.71
+    Achieved Occupancy                        %   88.80   89.40   89.10
+    Achieved Active Warps Per SM           warp   28.42   28.61   28.51
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte    131.07    131.07    131.07
+    Maximum Buffer Size             Kbyte     65.54    131.07     98.30
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -273,10 +273,10 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   14.61   14.73   14.67
+    One or More Eligible                   %   14.58   14.75   14.67
     Issued Warp Per Scheduler                   0.15    0.15    0.15
-    No Eligible                            %   85.27   85.39   85.33
-    Active Warps Per Scheduler          warp    7.20    7.28    7.24
+    No Eligible                            %   85.25   85.42   85.33
+    Active Warps Per Scheduler          warp    7.09    7.19    7.14
     Eligible Warps Per Scheduler        warp    0.20    0.20    0.20
     ---------------------------- ----------- ------- ------- -------
 
@@ -303,8 +303,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   49.28   49.44   49.36
-    Warp Cycles Per Executed Instruction           cycle   49.63   49.79   49.71
+    Warp Cycles Per Issued Instruction             cycle   48.62   48.75   48.68
+    Warp Cycles Per Executed Instruction           cycle   48.96   49.10   49.03
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               29.28   29.28   29.28
     ---------------------------------------- ----------- ------- ------- -------
@@ -314,43 +314,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.42    1.43    1.43
-    Executed Ipc Elapsed  inst/cycle    1.38    1.39    1.38
-    Issue Slots Busy               %   34.54   34.76   34.65
-    Issued Ipc Active     inst/cycle    1.42    1.43    1.43
-    SM Busy                        %   34.54   34.76   34.65
+    Executed Ipc Active   inst/cycle    1.43    1.45    1.44
+    Executed Ipc Elapsed  inst/cycle    1.39    1.39    1.39
+    Issue Slots Busy               %   34.69   34.87   34.78
+    Issued Ipc Active     inst/cycle    1.44    1.45    1.44
+    SM Busy                        %   34.69   34.87   34.78
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.78      4.99      4.88
+    DRAM Frequency                  Ghz      4.79      5.03      4.91
     SM Frequency                    Ghz      1.17      1.17      1.17
-    Elapsed Cycles                cycle 42,237.00 43,850.00 43,043.50
-    Memory Throughput                 %     66.88     73.07     69.98
-    DRAM Throughput                   %     66.88     73.07     69.98
-    Duration                         us     35.90     37.25     36.58
-    L1/TEX Cache Throughput           %     23.66     23.79     23.72
-    L2 Cache Throughput               %     39.55     40.87     40.21
-    SM Active Cycles              cycle 40,776.00 41,129.44 40,952.72
-    Compute (SM) Throughput           %     34.54     34.76     34.65
+    Elapsed Cycles                cycle 42,091.00 43,512.00 42,801.50
+    Memory Throughput                 %     66.77     72.98     69.88
+    DRAM Throughput                   %     66.77     72.98     69.88
+    Duration                         us     35.87     37.09     36.48
+    L1/TEX Cache Throughput           %     23.73     23.85     23.79
+    L2 Cache Throughput               %     39.70     41.01     40.36
+    SM Active Cycles              cycle 40,264.88 40,707.12 40,486.00
+    Compute (SM) Throughput           %     34.69     34.87     34.78
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,19,855.00  1,30,009.00  1,24,932.00
-    Total DRAM Elapsed Cycles        cycle  7,11,680.00  7,16,800.00  7,14,240.00
-    Average L1 Active Cycles         cycle    40,776.00    41,129.44    40,952.72
-    Total L1 Elapsed Cycles          cycle  6,72,736.00  6,77,008.00  6,74,872.00
-    Average L2 Active Cycles         cycle    38,422.12    38,722.00    38,572.06
-    Total L2 Elapsed Cycles          cycle  3,26,248.00  3,37,232.00  3,31,740.00
-    Average SM Active Cycles         cycle    40,776.00    41,129.44    40,952.72
-    Total SM Elapsed Cycles          cycle  6,72,736.00  6,77,008.00  6,74,872.00
-    Average SMSP Active Cycles       cycle    40,296.36    40,379.91    40,338.13
-    Total SMSP Elapsed Cycles        cycle 26,90,944.00 27,08,032.00 26,99,488.00
+    Average DRAM Active Cycles       cycle  1,20,510.00  1,29,662.00  1,25,086.00
+    Total DRAM Elapsed Cycles        cycle  7,10,656.00  7,21,920.00  7,16,288.00
+    Average L1 Active Cycles         cycle    40,264.88    40,707.12    40,486.00
+    Total L1 Elapsed Cycles          cycle  6,70,568.00  6,74,056.00  6,72,312.00
+    Average L2 Active Cycles         cycle    38,654.50    38,774.25    38,714.38
+    Total L2 Elapsed Cycles          cycle  3,25,024.00  3,35,944.00  3,30,484.00
+    Average SM Active Cycles         cycle    40,264.88    40,707.12    40,486.00
+    Total SM Elapsed Cycles          cycle  6,70,568.00  6,74,056.00  6,72,312.00
+    Average SMSP Active Cycles       cycle    40,262.92    40,577.92    40,420.42
+    Total SMSP Elapsed Cycles        cycle 26,82,272.00 26,96,224.00 26,89,248.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -390,15 +390,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    9.00    9.00    9.00
+    L2 Sector Promotion Misses                        %    9.11    9.23    9.17
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  106.82  111.69  109.26
-    Mem Busy                                          %   39.55   40.87   40.21
-    Max Bandwidth                                     %   66.88   73.07   69.98
-    L1/TEX Hit Rate                                   %    8.62    8.62    8.62
-    L2 Hit Rate                                       %   55.26   55.30   55.28
-    Mem Pipes Busy                                    %   14.52   14.61   14.57
+    Memory Throughput                           Gbyte/s  107.50  111.87  109.69
+    Mem Busy                                          %   39.70   41.01   40.36
+    Max Bandwidth                                     %   66.77   72.98   69.88
+    L1/TEX Hit Rate                                   %    8.61    8.61    8.61
+    L2 Hit Rate                                       %   55.12   55.30   55.21
+    Mem Pipes Busy                                    %   14.58   14.66   14.62
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -411,15 +411,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   82.96   83.71   83.33
-    Achieved Active Warps Per SM           warp   26.55   26.79   26.67
+    Achieved Occupancy                        %   84.64   85.18   84.91
+    Achieved Active Warps Per SM           warp   27.09   27.26   27.17
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte     65.54     65.54     65.54
+    Maximum Buffer Size             Kbyte    131.07    131.07    131.07
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -428,10 +428,10 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   36.20   36.27   36.23
+    One or More Eligible                   %   36.02   36.30   36.16
     Issued Warp Per Scheduler                   0.36    0.36    0.36
-    No Eligible                            %   63.73   63.80   63.77
-    Active Warps Per Scheduler          warp    6.70    6.70    6.70
+    No Eligible                            %   63.70   63.98   63.84
+    Active Warps Per Scheduler          warp    6.67    6.72    6.69
     Eligible Warps Per Scheduler        warp    0.56    0.57    0.57
     ---------------------------- ----------- ------- ------- -------
 
@@ -458,8 +458,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   18.47   18.51   18.49
-    Warp Cycles Per Executed Instruction           cycle   18.50   18.54   18.52
+    Warp Cycles Per Issued Instruction             cycle   18.51   18.51   18.51
+    Warp Cycles Per Executed Instruction           cycle   18.54   18.54   18.54
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               28.63   28.63   28.63
     ---------------------------------------- ----------- ------- ------- -------
@@ -469,43 +469,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.59    1.60    1.60
-    Executed Ipc Elapsed  inst/cycle    1.54    1.54    1.54
-    Issue Slots Busy               %   38.51   38.69   38.60
+    Executed Ipc Active   inst/cycle    1.60    1.60    1.60
+    Executed Ipc Elapsed  inst/cycle    1.55    1.55    1.55
+    Issue Slots Busy               %   38.84   38.84   38.84
     Issued Ipc Active     inst/cycle    1.60    1.61    1.60
-    SM Busy                        %   38.51   38.69   38.60
+    SM Busy                        %   38.84   38.84   38.84
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.81      4.86      4.84
+    DRAM Frequency                  Ghz      4.84      4.88      4.86
     SM Frequency                    Ghz      1.18      1.18      1.18
-    Elapsed Cycles                cycle 47,179.00 47,683.00 47,431.00
-    Memory Throughput                 %     65.85     71.11     68.48
-    DRAM Throughput                   %     65.85     71.11     68.48
-    Duration                         us     40.03     40.45     40.24
-    L1/TEX Cache Throughput           %     24.11     24.23     24.17
-    L2 Cache Throughput               %     39.97     40.36     40.16
-    SM Active Cycles              cycle 44,352.56 44,631.19 44,491.88
-    Compute (SM) Throughput           %     38.51     38.69     38.60
+    Elapsed Cycles                cycle 46,974.00 47,459.00 47,216.50
+    Memory Throughput                 %     65.69     70.46     68.07
+    DRAM Throughput                   %     65.69     70.46     68.07
+    Duration                         us     39.87     40.29     40.08
+    L1/TEX Cache Throughput           %     24.34     24.35     24.35
+    L2 Cache Throughput               %     40.13     40.55     40.34
+    SM Active Cycles              cycle 44,461.56 44,596.12 44,528.84
+    Compute (SM) Throughput           %     38.84     38.84     38.84
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,28,112.00  1,38,345.00  1,33,228.50
-    Total DRAM Elapsed Cycles        cycle  7,78,240.00  7,78,240.00  7,78,240.00
-    Average L1 Active Cycles         cycle    44,352.56    44,631.19    44,491.88
-    Total L1 Elapsed Cycles          cycle  7,38,008.00  7,41,480.00  7,39,744.00
-    Average L2 Active Cycles         cycle    42,387.12    42,660.38    42,523.75
-    Total L2 Elapsed Cycles          cycle  3,64,320.00  3,67,680.00  3,66,000.00
-    Average SM Active Cycles         cycle    44,352.56    44,631.19    44,491.88
-    Total SM Elapsed Cycles          cycle  7,38,008.00  7,41,480.00  7,39,744.00
-    Average SMSP Active Cycles       cycle    44,285.97    44,719.12    44,502.55
-    Total SMSP Elapsed Cycles        cycle 29,52,032.00 29,65,920.00 29,58,976.00
+    Average DRAM Active Cycles       cycle  1,27,804.00  1,37,442.00  1,32,623.00
+    Total DRAM Elapsed Cycles        cycle  7,78,240.00  7,80,288.00  7,79,264.00
+    Average L1 Active Cycles         cycle    44,461.56    44,596.12    44,528.84
+    Total L1 Elapsed Cycles          cycle  7,35,272.00  7,35,288.00  7,35,280.00
+    Average L2 Active Cycles         cycle    42,608.62    42,753.38    42,681.00
+    Total L2 Elapsed Cycles          cycle  3,62,176.00  3,65,976.00  3,64,076.00
+    Average SM Active Cycles         cycle    44,461.56    44,596.12    44,528.84
+    Total SM Elapsed Cycles          cycle  7,35,272.00  7,35,288.00  7,35,280.00
+    Average SMSP Active Cycles       cycle    44,436.50    44,568.03    44,502.27
+    Total SMSP Elapsed Cycles        cycle 29,41,088.00 29,41,152.00 29,41,120.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -516,8 +516,8 @@
     Shared Memory Spilling Requests                 byte         0.00         0.00         0.00
     Avg. Executed Instructions Per Scheduler        inst    17,788.17    17,788.17    17,788.17
     Executed Instructions                           inst 11,38,443.00 11,38,443.00 11,38,443.00
-    Avg. Issued Instructions Per Scheduler          inst    17,846.84    17,846.98    17,846.91
-    Issued Instructions                             inst 11,42,198.00 11,42,207.00 11,42,202.50
+    Avg. Issued Instructions Per Scheduler          inst    17,846.84    17,846.94    17,846.89
+    Issued Instructions                             inst 11,42,198.00 11,42,204.00 11,42,201.00
     ---------------------------------------- ----------- ------------ ------------ ------------
 
     Section: Launch Statistics
@@ -545,15 +545,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    8.16    8.25    8.21
+    L2 Sector Promotion Misses                        %    8.11    8.34    8.22
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  102.41  109.45  105.93
-    Mem Busy                                          %   39.97   40.36   40.16
-    Max Bandwidth                                     %   65.85   71.11   68.48
-    L1/TEX Hit Rate                                   %   10.22   10.25   10.24
-    L2 Hit Rate                                       %   58.92   58.94   58.93
-    Mem Pipes Busy                                    %   14.71   14.78   14.74
+    Memory Throughput                           Gbyte/s  102.57  109.17  105.87
+    Mem Busy                                          %   40.13   40.55   40.34
+    Max Bandwidth                                     %   65.69   70.46   68.07
+    L1/TEX Hit Rate                                   %   10.23   10.26   10.24
+    L2 Hit Rate                                       %   58.88   58.96   58.92
+    Mem Pipes Busy                                    %   14.83   14.83   14.83
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -566,8 +566,8 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   85.32   85.47   85.40
-    Achieved Active Warps Per SM           warp   27.30   27.35   27.33
+    Achieved Occupancy                        %   83.79   84.57   84.18
+    Achieved Active Warps Per SM           warp   26.81   27.06   26.94
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
@@ -583,11 +583,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   39.91   40.30   40.10
+    One or More Eligible                   %   40.04   40.16   40.10
     Issued Warp Per Scheduler                   0.40    0.40    0.40
-    No Eligible                            %   59.70   60.09   59.90
-    Active Warps Per Scheduler          warp    6.66    6.71    6.69
-    Eligible Warps Per Scheduler        warp    0.72    0.73    0.73
+    No Eligible                            %   59.84   59.96   59.90
+    Active Warps Per Scheduler          warp    6.62    6.69    6.66
+    Eligible Warps Per Scheduler        warp    0.71    0.72    0.71
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -613,8 +613,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   16.66   16.69   16.67
-    Warp Cycles Per Executed Instruction           cycle   16.72   16.74   16.73
+    Warp Cycles Per Issued Instruction             cycle   16.54   16.66   16.60
+    Warp Cycles Per Executed Instruction           cycle   16.59   16.72   16.66
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               28.41   28.41   28.41
     ---------------------------------------- ----------- ------- ------- -------
@@ -625,42 +625,42 @@
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
     Executed Ipc Active   inst/cycle    1.11    1.11    1.11
-    Executed Ipc Elapsed  inst/cycle    0.82    0.84    0.83
-    Issue Slots Busy               %   21.46   22.13   21.79
-    Issued Ipc Active     inst/cycle    1.16    1.17    1.16
-    SM Busy                        %   21.46   22.13   21.79
+    Executed Ipc Elapsed  inst/cycle    0.84    0.84    0.84
+    Issue Slots Busy               %   22.04   22.16   22.10
+    Issued Ipc Active     inst/cycle    1.16    1.17    1.17
+    SM Busy                        %   22.04   22.16   22.10
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- -------- -------- --------
     Metric Name             Metric Unit  Minimum  Maximum  Average
     ----------------------- ----------- -------- -------- --------
-    DRAM Frequency                  Ghz     3.80     4.18     3.99
-    SM Frequency                    Ghz     1.15     1.16     1.15
-    Elapsed Cycles                cycle 7,578.00 8,042.00 7,810.00
-    Memory Throughput                 %    82.85    89.64    86.25
-    DRAM Throughput                   %    82.85    89.64    86.25
-    Duration                         us     6.56     6.94     6.75
-    L1/TEX Cache Throughput           %    30.55    31.78    31.16
-    L2 Cache Throughput               %    41.33    43.83    42.58
-    SM Active Cycles              cycle 4,591.88 4,605.56 4,598.72
-    Compute (SM) Throughput           %    21.46    22.13    21.79
+    DRAM Frequency                  Ghz     4.02     4.15     4.09
+    SM Frequency                    Ghz     1.15     1.15     1.15
+    Elapsed Cycles                cycle 7,671.00 7,770.00 7,720.50
+    Memory Throughput                 %    81.77    83.64    82.71
+    DRAM Throughput                   %    81.77    83.64    82.71
+    Duration                         us     6.66     6.75     6.70
+    L1/TEX Cache Throughput           %    31.58    31.89    31.73
+    L2 Cache Throughput               %    42.73    43.31    43.02
+    SM Active Cycles              cycle 4,577.12 4,598.56 4,587.84
+    Compute (SM) Throughput           %    22.04    22.16    22.10
     ----------------------- ----------- -------- -------- --------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ----------- ----------- -----------
     Metric Name                Metric Unit     Minimum     Maximum     Average
     -------------------------- ----------- ----------- ----------- -----------
-    Average DRAM Active Cycles       cycle   22,695.00   23,637.00   23,166.00
-    Total DRAM Elapsed Cycles        cycle 1,05,472.00 1,09,568.00 1,07,520.00
-    Average L1 Active Cycles         cycle    4,591.88    4,605.56    4,598.72
-    Total L1 Elapsed Cycles          cycle   96,792.00   99,848.00   98,320.00
-    Average L2 Active Cycles         cycle    3,800.50    3,860.12    3,830.31
-    Total L2 Elapsed Cycles          cycle   58,328.00   61,832.00   60,080.00
-    Average SM Active Cycles         cycle    4,591.88    4,605.56    4,598.72
-    Total SM Elapsed Cycles          cycle   96,792.00   99,848.00   98,320.00
-    Average SMSP Active Cycles       cycle    4,517.86    4,601.53    4,559.70
-    Total SMSP Elapsed Cycles        cycle 3,87,168.00 3,99,392.00 3,93,280.00
+    Average DRAM Active Cycles       cycle   22,609.00   22,697.00   22,653.00
+    Total DRAM Elapsed Cycles        cycle 1,08,544.00 1,10,592.00 1,09,568.00
+    Average L1 Active Cycles         cycle    4,577.12    4,598.56    4,587.84
+    Total L1 Elapsed Cycles          cycle   96,648.00   97,208.00   96,928.00
+    Average L2 Active Cycles         cycle    3,829.12    3,848.75    3,838.94
+    Total L2 Elapsed Cycles          cycle   59,136.00   59,832.00   59,484.00
+    Average SM Active Cycles         cycle    4,577.12    4,598.56    4,587.84
+    Total SM Elapsed Cycles          cycle   96,648.00   97,208.00   96,928.00
+    Average SMSP Active Cycles       cycle    4,549.03    4,708.56    4,628.80
+    Total SMSP Elapsed Cycles        cycle 3,86,592.00 3,88,832.00 3,87,712.00
     -------------------------- ----------- ----------- ----------- -----------
 
     Section: Instruction Statistics
@@ -671,8 +671,8 @@
     Shared Memory Spilling Requests                 byte      0.00      0.00      0.00
     Avg. Executed Instructions Per Scheduler        inst  1,274.86  1,274.86  1,274.86
     Executed Instructions                           inst 81,591.00 81,591.00 81,591.00
-    Avg. Issued Instructions Per Scheduler          inst  1,338.56  1,339.14  1,338.85
-    Issued Instructions                             inst 85,668.00 85,705.00 85,686.50
+    Avg. Issued Instructions Per Scheduler          inst  1,338.70  1,339.22  1,338.96
+    Issued Instructions                             inst 85,677.00 85,710.00 85,693.50
     ---------------------------------------- ----------- --------- --------- ---------
 
     Section: Launch Statistics
@@ -700,15 +700,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    2.06    2.07    2.06
+    L2 Sector Promotion Misses                        %    2.06    2.14    2.10
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  108.93  110.71  109.82
-    Mem Busy                                          %   41.33   43.83   42.58
-    Max Bandwidth                                     %   82.85   89.64   86.25
-    L1/TEX Hit Rate                                   %    8.75    9.03    8.89
-    L2 Hit Rate                                       %   52.31   52.50   52.41
-    Mem Pipes Busy                                    %    7.72    7.96    7.84
+    Memory Throughput                           Gbyte/s  107.57  108.70  108.13
+    Mem Busy                                          %   42.73   43.31   43.02
+    Max Bandwidth                                     %   81.77   83.64   82.71
+    L1/TEX Hit Rate                                   %    8.77    8.99    8.88
+    L2 Hit Rate                                       %   52.20   52.32   52.26
+    Mem Pipes Busy                                    %    7.93    7.97    7.95
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -721,8 +721,8 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   85.50   86.55   86.03
-    Achieved Active Warps Per SM           warp   27.36   27.70   27.53
+    Achieved Occupancy                        %   81.60   82.16   81.88
+    Achieved Active Warps Per SM           warp   26.11   26.29   26.20
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
@@ -738,11 +738,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   29.09   29.64   29.37
-    Issued Warp Per Scheduler                   0.29    0.30    0.29
-    No Eligible                            %   70.36   70.91   70.63
-    Active Warps Per Scheduler          warp    6.84    7.03    6.94
-    Eligible Warps Per Scheduler        warp    0.70    0.72    0.71
+    One or More Eligible                   %   28.44   29.43   28.94
+    Issued Warp Per Scheduler                   0.28    0.29    0.29
+    No Eligible                            %   70.57   71.56   71.06
+    Active Warps Per Scheduler          warp    6.31    6.71    6.51
+    Eligible Warps Per Scheduler        warp    0.69    0.71    0.70
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -768,8 +768,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   23.53   23.71   23.62
-    Warp Cycles Per Executed Instruction           cycle   24.71   24.91   24.81
+    Warp Cycles Per Issued Instruction             cycle   22.17   22.82   22.49
+    Warp Cycles Per Executed Instruction           cycle   23.29   23.96   23.62
     Avg. Active Threads Per Warp                           31.96   31.96   31.96
     Avg. Not Predicated Off Threads Per Warp               31.66   31.66   31.66
     ---------------------------------------- ----------- ------- ------- -------
@@ -779,43 +779,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    0.90    0.90    0.90
-    Executed Ipc Elapsed  inst/cycle    0.86    0.86    0.86
-    Issue Slots Busy               %   21.57   21.67   21.62
-    Issued Ipc Active     inst/cycle    0.91    0.91    0.91
-    SM Busy                        %   21.57   21.67   21.62
+    Executed Ipc Active   inst/cycle    0.90    0.91    0.91
+    Executed Ipc Elapsed  inst/cycle    0.86    0.87    0.86
+    Issue Slots Busy               %   21.61   21.84   21.73
+    Issued Ipc Active     inst/cycle    0.91    0.92    0.91
+    SM Busy                        %   21.61   21.84   21.73
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.51      4.51      4.51
-    SM Frequency                    Ghz      1.18      1.18      1.18
-    Elapsed Cycles                cycle 39,311.00 39,888.00 39,599.50
-    Memory Throughput                 %     95.32     95.76     95.54
-    DRAM Throughput                   %     95.32     95.76     95.54
-    Duration                         us     33.34     33.86     33.60
-    L1/TEX Cache Throughput           %     32.59     32.71     32.65
-    L2 Cache Throughput               %     48.98     49.76     49.37
-    SM Active Cycles              cycle 33,792.44 33,947.25 33,869.84
-    Compute (SM) Throughput           %     21.57     21.67     21.62
+    DRAM Frequency                  Ghz      4.52      4.54      4.53
+    SM Frequency                    Ghz      1.17      1.17      1.17
+    Elapsed Cycles                cycle 39,389.00 39,423.00 39,406.00
+    Memory Throughput                 %     95.36     95.77     95.57
+    DRAM Throughput                   %     95.36     95.77     95.57
+    Duration                         us     33.54     33.60     33.57
+    L1/TEX Cache Throughput           %     32.65     33.09     32.87
+    L2 Cache Throughput               %     49.74     49.79     49.77
+    SM Active Cycles              cycle 33,647.56 33,754.69 33,701.12
+    Compute (SM) Throughput           %     21.61     21.84     21.73
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,44,150.00  1,45,440.00  1,44,795.00
-    Total DRAM Elapsed Cycles        cycle  6,02,112.00  6,10,304.00  6,06,208.00
-    Average L1 Active Cycles         cycle    33,792.44    33,947.25    33,869.84
-    Total L1 Elapsed Cycles          cycle  5,68,360.00  5,71,128.00  5,69,744.00
-    Average L2 Active Cycles         cycle    32,678.12    32,822.25    32,750.19
-    Total L2 Elapsed Cycles          cycle  3,03,416.00  3,08,072.00  3,05,744.00
-    Average SM Active Cycles         cycle    33,792.44    33,947.25    33,869.84
-    Total SM Elapsed Cycles          cycle  5,68,360.00  5,71,128.00  5,69,744.00
-    Average SMSP Active Cycles       cycle    33,478.11    33,637.77    33,557.94
-    Total SMSP Elapsed Cycles        cycle 22,73,440.00 22,84,512.00 22,78,976.00
+    Average DRAM Active Cycles       cycle  1,45,145.00  1,45,503.00  1,45,324.00
+    Total DRAM Elapsed Cycles        cycle  6,06,208.00  6,10,304.00  6,08,256.00
+    Average L1 Active Cycles         cycle    33,647.56    33,754.69    33,701.12
+    Total L1 Elapsed Cycles          cycle  5,63,960.00  5,69,976.00  5,66,968.00
+    Average L2 Active Cycles         cycle    32,388.62    32,443.12    32,415.88
+    Total L2 Elapsed Cycles          cycle  3,03,312.00  3,03,784.00  3,03,548.00
+    Average SM Active Cycles         cycle    33,647.56    33,754.69    33,701.12
+    Total SM Elapsed Cycles          cycle  5,63,960.00  5,69,976.00  5,66,968.00
+    Average SMSP Active Cycles       cycle    33,240.14    33,554.28    33,397.21
+    Total SMSP Elapsed Cycles        cycle 22,55,840.00 22,79,904.00 22,67,872.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -826,8 +826,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst    7,634.86    7,634.86    7,634.86
     Executed Instructions                           inst 4,88,631.00 4,88,631.00 4,88,631.00
-    Avg. Issued Instructions Per Scheduler          inst    7,698.73    7,698.86    7,698.80
-    Issued Instructions                             inst 4,92,719.00 4,92,727.00 4,92,723.00
+    Avg. Issued Instructions Per Scheduler          inst    7,698.36    7,698.92    7,698.64
+    Issued Instructions                             inst 4,92,695.00 4,92,731.00 4,92,713.00
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -855,15 +855,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    2.82    2.98    2.90
+    L2 Sector Promotion Misses                        %    2.98    3.05    3.01
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  137.47  138.34  137.90
-    Mem Busy                                          %   48.98   49.76   49.37
-    Max Bandwidth                                     %   95.32   95.76   95.54
-    L1/TEX Hit Rate                                   %   10.26   10.30   10.28
-    L2 Hit Rate                                       %   52.51   52.55   52.53
-    Mem Pipes Busy                                    %    8.07    8.11    8.09
+    Memory Throughput                           Gbyte/s  138.50  138.57  138.54
+    Mem Busy                                          %   49.74   49.79   49.77
+    Max Bandwidth                                     %   95.36   95.77   95.57
+    L1/TEX Hit Rate                                   %   10.31   10.36   10.34
+    L2 Hit Rate                                       %   52.37   52.57   52.47
+    Mem Pipes Busy                                    %    8.09    8.18    8.13
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -876,15 +876,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   88.19   88.20   88.20
-    Achieved Active Warps Per SM           warp   28.22   28.22   28.22
+    Achieved Occupancy                        %   88.66   89.07   88.86
+    Achieved Active Warps Per SM           warp   28.37   28.50   28.44
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte    131.07    131.07    131.07
+    Maximum Buffer Size             Kbyte     65.54    131.07     98.30
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -893,11 +893,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   22.89   23.00   22.94
+    One or More Eligible                   %   22.94   23.16   23.05
     Issued Warp Per Scheduler                   0.23    0.23    0.23
-    No Eligible                            %   77.00   77.11   77.06
-    Active Warps Per Scheduler          warp    7.07    7.12    7.09
-    Eligible Warps Per Scheduler        warp    0.39    0.39    0.39
+    No Eligible                            %   76.84   77.06   76.95
+    Active Warps Per Scheduler          warp    7.08    7.17    7.13
+    Eligible Warps Per Scheduler        warp    0.39    0.40    0.40
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -923,8 +923,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   30.88   30.97   30.93
-    Warp Cycles Per Executed Instruction           cycle   31.14   31.22   31.18
+    Warp Cycles Per Issued Instruction             cycle   30.86   30.97   30.91
+    Warp Cycles Per Executed Instruction           cycle   31.12   31.23   31.17
     Avg. Active Threads Per Warp                           31.99   31.99   31.99
     Avg. Not Predicated Off Threads Per Warp               31.69   31.69   31.69
     ---------------------------------------- ----------- ------- ------- -------
@@ -934,43 +934,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.03    1.04    1.03
-    Executed Ipc Elapsed  inst/cycle    0.97    0.97    0.97
-    Issue Slots Busy               %   24.45   24.53   24.49
-    Issued Ipc Active     inst/cycle    1.04    1.04    1.04
-    SM Busy                        %   24.85   24.93   24.89
+    Executed Ipc Active   inst/cycle    1.03    1.04    1.04
+    Executed Ipc Elapsed  inst/cycle    0.97    0.98    0.98
+    Issue Slots Busy               %   24.53   24.66   24.59
+    Issued Ipc Active     inst/cycle    1.04    1.05    1.05
+    SM Busy                        %   24.94   25.07   25.00
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.49      4.57      4.53
-    SM Frequency                    Ghz      1.18      1.18      1.18
-    Elapsed Cycles                cycle 39,616.00 40,067.00 39,841.50
-    Memory Throughput                 %     94.21     95.67     94.94
-    DRAM Throughput                   %     94.21     95.67     94.94
-    Duration                         us     33.63     33.98     33.81
-    L1/TEX Cache Throughput           %     32.60     32.77     32.69
-    L2 Cache Throughput               %     49.16     49.49     49.33
-    SM Active Cycles              cycle 33,665.94 33,844.31 33,755.12
-    Compute (SM) Throughput           %     24.85     24.93     24.89
+    DRAM Frequency                  Ghz      4.50      4.50      4.50
+    SM Frequency                    Ghz      1.17      1.17      1.17
+    Elapsed Cycles                cycle 39,853.00 39,986.00 39,919.50
+    Memory Throughput                 %     95.35     95.38     95.36
+    DRAM Throughput                   %     95.35     95.38     95.36
+    Duration                         us     33.95     33.98     33.97
+    L1/TEX Cache Throughput           %     32.77     32.79     32.78
+    L2 Cache Throughput               %     49.13     49.33     49.23
+    SM Active Cycles              cycle 33,517.88 33,696.31 33,607.09
+    Compute (SM) Throughput           %     24.94     25.07     25.00
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,44,712.00  1,45,966.00  1,45,339.00
-    Total DRAM Elapsed Cycles        cycle  6,10,304.00  6,14,400.00  6,12,352.00
-    Average L1 Active Cycles         cycle    33,665.94    33,844.31    33,755.12
-    Total L1 Elapsed Cycles          cycle  5,73,112.00  5,74,952.00  5,74,032.00
-    Average L2 Active Cycles         cycle    32,763.00    32,879.75    32,821.38
-    Total L2 Elapsed Cycles          cycle  3,05,800.00  3,08,320.00  3,07,060.00
-    Average SM Active Cycles         cycle    33,665.94    33,844.31    33,755.12
-    Total SM Elapsed Cycles          cycle  5,73,112.00  5,74,952.00  5,74,032.00
-    Average SMSP Active Cycles       cycle    33,520.12    33,707.12    33,613.62
-    Total SMSP Elapsed Cycles        cycle 22,92,448.00 22,99,808.00 22,96,128.00
+    Average DRAM Active Cycles       cycle  1,45,775.00  1,45,962.00  1,45,868.50
+    Total DRAM Elapsed Cycles        cycle  6,11,328.00  6,12,352.00  6,11,840.00
+    Average L1 Active Cycles         cycle    33,517.88    33,696.31    33,607.09
+    Total L1 Elapsed Cycles          cycle  5,69,920.00  5,73,032.00  5,71,476.00
+    Average L2 Active Cycles         cycle    32,558.50    32,778.50    32,668.50
+    Total L2 Elapsed Cycles          cycle  3,07,320.00  3,08,256.00  3,07,788.00
+    Average SM Active Cycles         cycle    33,517.88    33,696.31    33,607.09
+    Total SM Elapsed Cycles          cycle  5,69,920.00  5,73,032.00  5,71,476.00
+    Average SMSP Active Cycles       cycle    33,521.03    33,583.55    33,552.29
+    Total SMSP Elapsed Cycles        cycle 22,79,680.00 22,92,128.00 22,85,904.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -981,8 +981,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst    8,715.09    8,715.09    8,715.09
     Executed Instructions                           inst 5,57,766.00 5,57,766.00 5,57,766.00
-    Avg. Issued Instructions Per Scheduler          inst    8,784.83    8,784.84    8,784.84
-    Issued Instructions                             inst 5,62,229.00 5,62,230.00 5,62,229.50
+    Avg. Issued Instructions Per Scheduler          inst    8,784.20    8,784.86    8,784.53
+    Issued Instructions                             inst 5,62,189.00 5,62,231.00 5,62,210.00
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -1010,15 +1010,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    1.38    1.51    1.45
+    L2 Sector Promotion Misses                        %    1.48    1.49    1.48
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  137.44  137.69  137.57
-    Mem Busy                                          %   49.16   49.49   49.33
-    Max Bandwidth                                     %   94.21   95.67   94.94
-    L1/TEX Hit Rate                                   %   12.93   13.06   13.00
-    L2 Hit Rate                                       %   51.82   51.91   51.86
-    Mem Pipes Busy                                    %   11.23   11.26   11.24
+    Memory Throughput                           Gbyte/s  137.39  137.44  137.42
+    Mem Busy                                          %   49.13   49.33   49.23
+    Max Bandwidth                                     %   95.35   95.38   95.36
+    L1/TEX Hit Rate                                   %   12.75   13.01   12.88
+    L2 Hit Rate                                       %   51.54   51.84   51.69
+    Mem Pipes Busy                                    %   11.26   11.32   11.29
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -1031,15 +1031,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   88.97   90.48   89.72
-    Achieved Active Warps Per SM           warp   28.47   28.95   28.71
+    Achieved Occupancy                        %   89.77   90.34   90.05
+    Achieved Active Warps Per SM           warp   28.73   28.91   28.82
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte     65.54     65.54     65.54
+    Maximum Buffer Size             Kbyte     65.54    131.07     98.30
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -1048,11 +1048,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   26.06   26.21   26.13
+    One or More Eligible                   %   26.16   26.21   26.18
     Issued Warp Per Scheduler                   0.26    0.26    0.26
-    No Eligible                            %   73.79   73.94   73.87
-    Active Warps Per Scheduler          warp    7.20    7.24    7.22
-    Eligible Warps Per Scheduler        warp    0.48    0.49    0.49
+    No Eligible                            %   73.79   73.84   73.82
+    Active Warps Per Scheduler          warp    7.23    7.25    7.24
+    Eligible Warps Per Scheduler        warp    0.47    0.49    0.48
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -1078,8 +1078,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   27.47   27.79   27.63
-    Warp Cycles Per Executed Instruction           cycle   27.69   28.01   27.85
+    Warp Cycles Per Issued Instruction             cycle   27.60   27.71   27.65
+    Warp Cycles Per Executed Instruction           cycle   27.82   27.92   27.87
     Avg. Active Threads Per Warp                           31.99   31.99   31.99
     Avg. Not Predicated Off Threads Per Warp               27.76   27.76   27.76
     ---------------------------------------- ----------- ------- ------- -------
@@ -1089,43 +1089,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    0.42    0.69    0.55
-    Executed Ipc Elapsed  inst/cycle    0.25    0.44    0.35
-    Issue Slots Busy               %    6.38   11.07    8.73
-    Issued Ipc Active     inst/cycle    0.42    0.70    0.56
-    SM Busy                        %    8.36   14.77   11.56
+    Executed Ipc Active   inst/cycle    0.42    0.68    0.55
+    Executed Ipc Elapsed  inst/cycle    0.25    0.44    0.34
+    Issue Slots Busy               %    6.34   11.05    8.70
+    Issued Ipc Active     inst/cycle    0.43    0.69    0.56
+    SM Busy                        %    8.30   14.73   11.53
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.87      5.02      4.93
+    DRAM Frequency                  Ghz      4.74      4.96      4.88
     SM Frequency                    Ghz      1.17      1.18      1.17
-    Elapsed Cycles                cycle 12,165.00 15,647.00 13,905.50
-    Memory Throughput                 %     34.88     44.00     39.36
-    DRAM Throughput                   %     34.88     44.00     39.36
-    Duration                         us     10.37     13.25     11.82
-    L1/TEX Cache Throughput           %     14.58     47.51     31.00
-    L2 Cache Throughput               %     21.61     27.94     24.75
-    SM Active Cycles              cycle  7,593.50  9,408.44  8,497.30
-    Compute (SM) Throughput           %      8.36     14.77     11.56
+    Elapsed Cycles                cycle 12,309.00 15,543.00 13,952.25
+    Memory Throughput                 %     35.29     44.85     39.79
+    DRAM Throughput                   %     35.29     44.85     39.79
+    Duration                         us     10.50     13.22     11.88
+    L1/TEX Cache Throughput           %     14.58     47.40     30.89
+    L2 Cache Throughput               %     21.73     27.54     24.56
+    SM Active Cycles              cycle  7,645.19  9,349.12  8,470.89
+    Compute (SM) Throughput           %      8.30     14.73     11.53
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ----------- ------------ -----------
     Metric Name                Metric Unit     Minimum      Maximum     Average
     -------------------------- ----------- ----------- ------------ -----------
-    Average DRAM Active Cycles       cycle   21,767.00    23,354.00   22,660.00
-    Total DRAM Elapsed Cycles        cycle 2,02,752.00  2,66,240.00 2,33,472.00
-    Average L1 Active Cycles         cycle    7,593.50     9,408.44    8,497.30
-    Total L1 Elapsed Cycles          cycle 1,90,784.00  2,50,368.00 2,20,432.00
-    Average L2 Active Cycles         cycle    5,987.25     9,163.25    7,456.56
-    Total L2 Elapsed Cycles          cycle   93,360.00  1,20,544.00 1,07,040.00
-    Average SM Active Cycles         cycle    7,593.50     9,408.44    8,497.30
-    Total SM Elapsed Cycles          cycle 1,90,784.00  2,50,368.00 2,20,432.00
-    Average SMSP Active Cycles       cycle    7,545.05     9,286.55    8,453.36
-    Total SMSP Elapsed Cycles        cycle 7,63,136.00 10,01,472.00 8,81,728.00
+    Average DRAM Active Cycles       cycle   22,259.00    23,125.00   22,806.00
+    Total DRAM Elapsed Cycles        cycle 2,02,752.00  2,62,144.00 2,32,448.00
+    Average L1 Active Cycles         cycle    7,645.19     9,349.12    8,470.89
+    Total L1 Elapsed Cycles          cycle 1,91,280.00  2,52,008.00 2,21,120.00
+    Average L2 Active Cycles         cycle    5,998.12     9,092.75    7,463.44
+    Total L2 Elapsed Cycles          cycle   94,448.00  1,19,776.00 1,07,310.00
+    Average SM Active Cycles         cycle    7,645.19     9,349.12    8,470.89
+    Total SM Elapsed Cycles          cycle 1,91,280.00  2,52,008.00 2,21,120.00
+    Average SMSP Active Cycles       cycle    7,551.72     9,324.53    8,473.25
+    Total SMSP Elapsed Cycles        cycle 7,65,120.00 10,08,032.00 8,84,480.00
     -------------------------- ----------- ----------- ------------ -----------
 
     Section: Instruction Statistics
@@ -1136,8 +1136,8 @@
     Shared Memory Spilling Requests                 byte      0.00      0.00      0.00
     Avg. Executed Instructions Per Scheduler        inst    988.50  1,305.00  1,146.75
     Executed Instructions                           inst 63,264.00 83,520.00 73,392.00
-    Avg. Issued Instructions Per Scheduler          inst    998.25  1,320.38  1,159.31
-    Issued Instructions                             inst 63,888.00 84,504.00 74,196.00
+    Avg. Issued Instructions Per Scheduler          inst    998.25  1,320.59  1,159.24
+    Issued Instructions                             inst 63,888.00 84,518.00 74,191.50
     ---------------------------------------- ----------- --------- --------- ---------
 
     Section: Launch Statistics
@@ -1168,12 +1168,12 @@
     L2 Sector Promotion Misses                        %    0.02   47.79   23.91
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s   56.08   68.83   62.07
-    Mem Busy                                          %   23.65   27.94   25.79
-    Max Bandwidth                                     %   34.88   44.00   39.36
+    Memory Throughput                           Gbyte/s   55.99   68.06   62.07
+    Mem Busy                                          %   23.50   27.54   25.42
+    Max Bandwidth                                     %   35.29   44.85   39.79
     L1/TEX Hit Rate                                   %    0.92   60.09   30.50
-    L2 Hit Rate                                       %   50.40   74.48   62.36
-    Mem Pipes Busy                                    %    5.29    6.94    6.12
+    L2 Hit Rate                                       %   50.56   74.49   62.47
+    Mem Pipes Busy                                    %    5.26    6.93    6.10
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -1186,8 +1186,8 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   16.00   16.00   16.00
     Theoretical Occupancy                     %   50.00   50.00   50.00
-    Achieved Occupancy                        %   24.31   24.60   24.43
-    Achieved Active Warps Per SM           warp    7.78    7.87    7.82
+    Achieved Occupancy                        %   24.30   24.88   24.62
+    Achieved Active Warps Per SM           warp    7.78    7.96    7.88
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
@@ -1203,11 +1203,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   10.75   17.50   14.01
+    One or More Eligible                   %   10.71   17.48   13.99
     Issued Warp Per Scheduler                   0.11    0.17    0.14
-    No Eligible                            %   82.50   89.25   85.99
-    Active Warps Per Scheduler          warp    1.88    2.00    1.96
-    Eligible Warps Per Scheduler        warp    0.17    0.27    0.22
+    No Eligible                            %   82.52   89.29   86.01
+    Active Warps Per Scheduler          warp    1.88    2.03    1.96
+    Eligible Warps Per Scheduler        warp    0.16    0.27    0.22
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -1233,8 +1233,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   11.13   18.49   14.83
-    Warp Cycles Per Executed Instruction           cycle   11.26   18.67   14.99
+    Warp Cycles Per Issued Instruction             cycle   11.08   18.37   14.84
+    Warp Cycles Per Executed Instruction           cycle   11.21   18.55   14.99
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               31.41   31.51   31.46
     ---------------------------------------- ----------- ------- ------- -------
@@ -1245,42 +1245,42 @@
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
     Executed Ipc Active   inst/cycle    0.44    0.83    0.63
-    Executed Ipc Elapsed  inst/cycle    0.39    0.72    0.55
-    Issue Slots Busy               %    9.67   18.04   13.73
+    Executed Ipc Elapsed  inst/cycle    0.38    0.71    0.54
+    Issue Slots Busy               %    9.50   17.88   13.67
     Issued Ipc Active     inst/cycle    0.44    0.84    0.63
-    SM Busy                        %   12.74   22.44   17.44
+    SM Busy                        %   12.51   22.23   17.36
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.56      5.12      4.86
-    SM Frequency                    Ghz      1.18      1.18      1.18
-    Elapsed Cycles                cycle 53,381.00 61,335.00 57,239.50
-    Memory Throughput                 %     58.09     69.88     62.94
-    DRAM Throughput                   %     58.09     69.88     62.94
-    Duration                         us     45.28     51.81     48.47
-    L1/TEX Cache Throughput           %     20.11     74.74     47.35
-    L2 Cache Throughput               %     34.66     36.28     35.46
-    SM Active Cycles              cycle 43,167.69 54,165.44 48,860.38
-    Compute (SM) Throughput           %     12.74     22.44     17.44
+    DRAM Frequency                  Ghz      4.74      5.05      4.89
+    SM Frequency                    Ghz      1.17      1.18      1.18
+    Elapsed Cycles                cycle 51,541.00 61,504.00 57,159.25
+    Memory Throughput                 %     57.01     67.97     62.54
+    DRAM Throughput                   %     57.01     67.97     62.54
+    Duration                         us     43.87     52.06     48.52
+    L1/TEX Cache Throughput           %     20.37     74.59     46.70
+    L2 Cache Throughput               %     34.22     37.57     35.64
+    SM Active Cycles              cycle 43,161.06 54,093.25 48,921.14
+    Compute (SM) Throughput           %     12.51     22.23     17.36
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,45,265.00  1,49,920.00  1,47,711.25
-    Total DRAM Elapsed Cycles        cycle  8,31,488.00 10,27,072.00  9,43,744.00
-    Average L1 Active Cycles         cycle    43,167.69    54,165.44    48,860.38
-    Total L1 Elapsed Cycles          cycle  7,99,536.00  9,85,312.00  8,93,575.00
-    Average L2 Active Cycles         cycle    38,351.75    54,488.38    45,996.14
-    Total L2 Elapsed Cycles          cycle  4,11,080.00  4,72,776.00  4,41,084.00
-    Average SM Active Cycles         cycle    43,167.69    54,165.44    48,860.38
-    Total SM Elapsed Cycles          cycle  7,99,536.00  9,85,312.00  8,93,575.00
-    Average SMSP Active Cycles       cycle    43,924.59    55,048.95    49,253.70
-    Total SMSP Elapsed Cycles        cycle 31,98,144.00 39,41,248.00 35,74,300.00
+    Average DRAM Active Cycles       cycle  1,45,085.00  1,50,047.00  1,47,547.75
+    Total DRAM Elapsed Cycles        cycle  8,57,088.00 10,52,672.00  9,49,760.00
+    Average L1 Active Cycles         cycle    43,161.06    54,093.25    48,921.14
+    Total L1 Elapsed Cycles          cycle  8,06,992.00 10,03,560.00  9,00,795.00
+    Average L2 Active Cycles         cycle    38,683.00    55,538.62    46,263.56
+    Total L2 Elapsed Cycles          cycle  3,97,160.00  4,74,880.00  4,41,012.00
+    Average SM Active Cycles         cycle    43,161.06    54,093.25    48,921.14
+    Total SM Elapsed Cycles          cycle  8,06,992.00 10,03,560.00  9,00,795.00
+    Average SMSP Active Cycles       cycle    43,970.97    54,108.61    49,095.64
+    Total SMSP Elapsed Cycles        cycle 32,27,968.00 40,14,240.00 36,03,180.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -1291,8 +1291,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst    5,931.00    8,982.00    7,456.50
     Executed Instructions                           inst 3,79,584.00 5,74,848.00 4,77,216.00
-    Avg. Issued Instructions Per Scheduler          inst    5,958.00    9,016.34    7,486.96
-    Issued Instructions                             inst 3,81,312.00 5,77,046.00 4,79,165.75
+    Avg. Issued Instructions Per Scheduler          inst    5,958.00    9,016.05    7,486.87
+    Issued Instructions                             inst 3,81,312.00 5,77,027.00 4,79,159.38
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -1320,15 +1320,15 @@
     --------------------------------------- ----------- ------- ------- -------
     Local Memory Spilling Requests                         0.00    0.00    0.00
     Local Memory Spilling Request Overhead            %    0.00    0.00    0.00
-    L2 Sector Promotion Misses                        %    0.01   50.19   24.81
+    L2 Sector Promotion Misses                        %    0.01   50.48   25.00
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s   92.60  103.07   97.75
-    Mem Busy                                          %   35.57   37.34   36.42
-    Max Bandwidth                                     %   58.09   69.88   62.94
-    L1/TEX Hit Rate                                   %    1.06   57.40   29.06
-    L2 Hit Rate                                       %   50.06   78.07   63.53
-    Mem Pipes Busy                                    %    8.07    9.94    8.96
+    Memory Throughput                           Gbyte/s   92.21  106.23   97.69
+    Mem Busy                                          %   35.66   37.57   36.39
+    Max Bandwidth                                     %   57.01   67.97   62.54
+    L1/TEX Hit Rate                                   %    1.06   56.80   28.83
+    L2 Hit Rate                                       %   50.09   76.53   62.70
+    Mem Pipes Busy                                    %    7.92    9.85    8.90
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -1341,15 +1341,15 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   16.00   16.00   16.00
     Theoretical Occupancy                     %   50.00   50.00   50.00
-    Achieved Occupancy                        %   43.66   47.79   45.88
-    Achieved Active Warps Per SM           warp   13.97   15.29   14.68
+    Achieved Occupancy                        %   43.02   47.47   45.97
+    Achieved Active Warps Per SM           warp   13.77   15.19   14.71
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
     ------------------------- ----------- --------- --------- ---------
     Metric Name               Metric Unit   Minimum   Maximum   Average
     ------------------------- ----------- --------- --------- ---------
-    Maximum Buffer Size             Kbyte     65.54    131.07     98.30
+    Maximum Buffer Size             Kbyte     65.54    131.07     81.92
     Maximum Sampling Interval       cycle 20,000.00 20,000.00 20,000.00
     # Pass Groups                              1.00      1.00      1.00
     ------------------------- ----------- --------- --------- ---------
@@ -1358,10 +1358,10 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   10.82   20.52   15.68
+    One or More Eligible                   %   11.01   20.50   15.70
     Issued Warp Per Scheduler                   0.11    0.21    0.16
-    No Eligible                            %   79.48   89.18   84.32
-    Active Warps Per Scheduler          warp    3.56    3.76    3.64
+    No Eligible                            %   79.50   88.99   84.30
+    Active Warps Per Scheduler          warp    3.50    3.77    3.68
     Eligible Warps Per Scheduler        warp    0.19    0.41    0.30
     ---------------------------- ----------- ------- ------- -------
 
@@ -1388,8 +1388,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   17.44   34.16   25.61
-    Warp Cycles Per Executed Instruction           cycle   17.50   34.31   25.72
+    Warp Cycles Per Issued Instruction             cycle   17.33   34.02   25.80
+    Warp Cycles Per Executed Instruction           cycle   17.39   34.17   25.91
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               30.69   31.51   31.10
     ---------------------------------------- ----------- ------- ------- -------
@@ -1399,43 +1399,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.42    1.48    1.45
-    Executed Ipc Elapsed  inst/cycle    1.14    1.15    1.14
-    Issue Slots Busy               %   29.22   29.52   29.37
-    Issued Ipc Active     inst/cycle    1.46    1.52    1.49
-    SM Busy                        %   29.22   29.52   29.37
+    Executed Ipc Active   inst/cycle    1.40    1.47    1.44
+    Executed Ipc Elapsed  inst/cycle    1.11    1.15    1.13
+    Issue Slots Busy               %   28.62   29.54   29.08
+    Issued Ipc Active     inst/cycle    1.44    1.52    1.48
+    SM Busy                        %   28.62   29.54   29.08
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- -------- -------- --------
     Metric Name             Metric Unit  Minimum  Maximum  Average
     ----------------------- ----------- -------- -------- --------
-    DRAM Frequency                  Ghz     4.32     4.38     4.35
-    SM Frequency                    Ghz     1.15     1.15     1.15
-    Elapsed Cycles                cycle 7,700.00 7,803.00 7,751.50
-    Memory Throughput                 %    74.72    75.54    75.13
-    DRAM Throughput                   %    74.72    75.54    75.13
-    Duration                         us     6.66     6.75     6.70
-    L1/TEX Cache Throughput           %    25.47    25.73    25.60
-    L2 Cache Throughput               %    42.37    42.96    42.67
-    SM Active Cycles              cycle 5,247.12 5,439.12 5,343.12
-    Compute (SM) Throughput           %    29.22    29.52    29.37
+    DRAM Frequency                  Ghz     4.05     4.13     4.09
+    SM Frequency                    Ghz     1.15     1.16     1.15
+    Elapsed Cycles                cycle 7,986.00 8,219.00 8,102.50
+    Memory Throughput                 %    76.79    78.46    77.62
+    DRAM Throughput                   %    76.79    78.46    77.62
+    Duration                         us     6.94     7.07     7.01
+    L1/TEX Cache Throughput           %    24.95    25.74    25.34
+    L2 Cache Throughput               %    40.14    41.15    40.64
+    SM Active Cycles              cycle 5,251.69 5,528.75 5,390.22
+    Compute (SM) Throughput           %    28.62    29.54    29.08
     ----------------------- ----------- -------- -------- --------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ----------- ----------- -----------
     Metric Name                Metric Unit     Minimum     Maximum     Average
     -------------------------- ----------- ----------- ----------- -----------
-    Average DRAM Active Cycles       cycle   21,806.00   22,045.00   21,925.50
-    Total DRAM Elapsed Cycles        cycle 1,16,736.00 1,16,736.00 1,16,736.00
-    Average L1 Active Cycles         cycle    5,247.12    5,439.12    5,343.12
-    Total L1 Elapsed Cycles          cycle 1,07,960.00 1,09,056.00 1,08,508.00
-    Average L2 Active Cycles         cycle    4,716.00    4,789.25    4,752.62
-    Total L2 Elapsed Cycles          cycle   59,128.00   60,064.00   59,596.00
-    Average SM Active Cycles         cycle    5,247.12    5,439.12    5,343.12
-    Total SM Elapsed Cycles          cycle 1,07,960.00 1,09,056.00 1,08,508.00
-    Average SMSP Active Cycles       cycle    5,133.69    5,154.77    5,144.23
-    Total SMSP Elapsed Cycles        cycle 4,31,840.00 4,36,224.00 4,34,032.00
+    Average DRAM Active Cycles       cycle   22,016.00   22,496.00   22,256.00
+    Total DRAM Elapsed Cycles        cycle 1,14,688.00 1,14,688.00 1,14,688.00
+    Average L1 Active Cycles         cycle    5,251.69    5,528.75    5,390.22
+    Total L1 Elapsed Cycles          cycle 1,07,912.00 1,11,336.00 1,09,624.00
+    Average L2 Active Cycles         cycle    4,742.62    4,824.88    4,783.75
+    Total L2 Elapsed Cycles          cycle   61,672.00   63,224.00   62,448.00
+    Average SM Active Cycles         cycle    5,251.69    5,528.75    5,390.22
+    Total SM Elapsed Cycles          cycle 1,07,912.00 1,11,336.00 1,09,624.00
+    Average SMSP Active Cycles       cycle    5,147.16    5,168.08    5,157.62
+    Total SMSP Elapsed Cycles        cycle 4,31,648.00 4,45,344.00 4,38,496.00
     -------------------------- ----------- ----------- ----------- -----------
 
     Section: Instruction Statistics
@@ -1446,8 +1446,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst    1,936.00    1,936.00    1,936.00
     Executed Instructions                           inst 1,23,904.00 1,23,904.00 1,23,904.00
-    Avg. Issued Instructions Per Scheduler          inst    1,991.62    1,991.94    1,991.78
-    Issued Instructions                             inst 1,27,464.00 1,27,484.00 1,27,474.00
+    Avg. Issued Instructions Per Scheduler          inst    1,991.62    1,992.00    1,991.81
+    Issued Instructions                             inst 1,27,464.00 1,27,488.00 1,27,476.00
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -1478,12 +1478,12 @@
     L2 Sector Promotion Misses                        %    0.00    0.00    0.00
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  103.35  105.99  104.67
-    Mem Busy                                          %   42.37   42.96   42.67
-    Max Bandwidth                                     %   74.72   75.54   75.13
+    Memory Throughput                           Gbyte/s   99.62  103.67  101.64
+    Mem Busy                                          %   40.14   41.15   40.64
+    Max Bandwidth                                     %   76.79   78.46   77.62
     L1/TEX Hit Rate                                   %    0.00    0.00    0.00
-    L2 Hit Rate                                       %   50.27   50.66   50.47
-    Mem Pipes Busy                                    %    8.45    8.54    8.49
+    L2 Hit Rate                                       %   50.41   50.71   50.56
+    Mem Pipes Busy                                    %    8.28    8.54    8.41
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -1496,8 +1496,8 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   77.62   78.15   77.88
-    Achieved Active Warps Per SM           warp   24.84   25.01   24.92
+    Achieved Occupancy                        %   74.03   76.95   75.49
+    Achieved Active Warps Per SM           warp   23.69   24.62   24.16
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
@@ -1513,11 +1513,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   38.64   38.80   38.72
+    One or More Eligible                   %   38.54   38.70   38.62
     Issued Warp Per Scheduler                   0.39    0.39    0.39
-    No Eligible                            %   61.20   61.36   61.28
-    Active Warps Per Scheduler          warp    6.27    6.29    6.28
-    Eligible Warps Per Scheduler        warp    0.64    0.66    0.65
+    No Eligible                            %   61.30   61.46   61.38
+    Active Warps Per Scheduler          warp    6.21    6.67    6.44
+    Eligible Warps Per Scheduler        warp    0.63    0.65    0.64
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -1543,8 +1543,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   16.21   16.22   16.21
-    Warp Cycles Per Executed Instruction           cycle   16.68   16.69   16.68
+    Warp Cycles Per Issued Instruction             cycle   16.12   17.25   16.68
+    Warp Cycles Per Executed Instruction           cycle   16.59   17.74   17.17
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               29.88   29.88   29.88
     ---------------------------------------- ----------- ------- ------- -------
@@ -1554,43 +1554,43 @@
     -------------------- ----------- ------- ------- -------
     Metric Name          Metric Unit Minimum Maximum Average
     -------------------- ----------- ------- ------- -------
-    Executed Ipc Active   inst/cycle    1.38    1.38    1.38
-    Executed Ipc Elapsed  inst/cycle    1.28    1.29    1.29
-    Issue Slots Busy               %   32.03   32.50   32.32
-    Issued Ipc Active     inst/cycle    1.38    1.39    1.39
-    SM Busy                        %   32.03   32.50   32.32
+    Executed Ipc Active   inst/cycle    1.38    1.39    1.38
+    Executed Ipc Elapsed  inst/cycle    1.27    1.30    1.28
+    Issue Slots Busy               %   31.89   32.60   32.25
+    Issued Ipc Active     inst/cycle    1.39    1.39    1.39
+    SM Busy                        %   31.89   32.60   32.25
     -------------------- ----------- ------- ------- -------
 
     Section: GPU Speed Of Light Throughput
     ----------------------- ----------- --------- --------- ---------
     Metric Name             Metric Unit   Minimum   Maximum   Average
     ----------------------- ----------- --------- --------- ---------
-    DRAM Frequency                  Ghz      4.45      4.58      4.54
+    DRAM Frequency                  Ghz      4.55      4.59      4.57
     SM Frequency                    Ghz      1.17      1.17      1.17
-    Elapsed Cycles                cycle 39,084.00 40,097.00 39,458.25
-    Memory Throughput                 %     93.91     95.47     94.71
-    DRAM Throughput                   %     93.91     95.47     94.71
-    Duration                         us     33.28     34.05     33.59
-    L1/TEX Cache Throughput           %     29.09     29.51     29.33
-    L2 Cache Throughput               %     48.07     49.30     48.78
-    SM Active Cycles              cycle 33,605.25 33,773.81 33,696.45
-    Compute (SM) Throughput           %     32.03     32.50     32.32
+    Elapsed Cycles                cycle 39,319.00 39,439.00 39,393.75
+    Memory Throughput                 %     93.73     94.32     93.99
+    DRAM Throughput                   %     93.73     94.32     93.99
+    Duration                         us     33.57     33.66     33.63
+    L1/TEX Cache Throughput           %     28.98     29.56     29.28
+    L2 Cache Throughput               %     48.78     48.94     48.86
+    SM Active Cycles              cycle 33,477.19 33,628.62 33,566.64
+    Compute (SM) Throughput           %     31.89     32.60     32.25
     ----------------------- ----------- --------- --------- ---------
 
     Section: GPU and Memory Workload Distribution
     -------------------------- ----------- ------------ ------------ ------------
     Metric Name                Metric Unit      Minimum      Maximum      Average
     -------------------------- ----------- ------------ ------------ ------------
-    Average DRAM Active Cycles       cycle  1,43,916.00  1,45,212.00  1,44,502.50
-    Total DRAM Elapsed Cycles        cycle  6,06,208.00  6,18,496.00  6,10,304.00
-    Average L1 Active Cycles         cycle    33,605.25    33,773.81    33,696.45
-    Total L1 Elapsed Cycles          cycle  5,74,680.00  5,82,936.00  5,77,876.00
-    Average L2 Active Cycles         cycle    32,780.00    32,936.50    32,869.97
-    Total L2 Elapsed Cycles          cycle  3,00,768.00  3,08,480.00  3,04,120.00
-    Average SM Active Cycles         cycle    33,605.25    33,773.81    33,696.45
-    Total SM Elapsed Cycles          cycle  5,74,680.00  5,82,936.00  5,77,876.00
-    Average SMSP Active Cycles       cycle    33,282.03    33,601.19    33,428.85
-    Total SMSP Elapsed Cycles        cycle 22,98,720.00 23,31,744.00 23,11,504.00
+    Average DRAM Active Cycles       cycle  1,43,723.00  1,44,812.00  1,44,311.00
+    Total DRAM Elapsed Cycles        cycle  6,12,352.00  6,16,448.00  6,14,144.00
+    Average L1 Active Cycles         cycle    33,477.19    33,628.62    33,566.64
+    Total L1 Elapsed Cycles          cycle  5,72,896.00  5,85,560.00  5,79,004.00
+    Average L2 Active Cycles         cycle    32,482.50    32,970.75    32,749.25
+    Total L2 Elapsed Cycles          cycle  3,03,224.00  3,04,152.00  3,03,668.00
+    Average SM Active Cycles         cycle    33,477.19    33,628.62    33,566.64
+    Total SM Elapsed Cycles          cycle  5,72,896.00  5,85,560.00  5,79,004.00
+    Average SMSP Active Cycles       cycle    33,386.98    33,625.14    33,458.70
+    Total SMSP Elapsed Cycles        cycle 22,91,584.00 23,42,240.00 23,16,016.00
     -------------------------- ----------- ------------ ------------ ------------
 
     Section: Instruction Statistics
@@ -1601,8 +1601,8 @@
     Shared Memory Spilling Requests                 byte        0.00        0.00        0.00
     Avg. Executed Instructions Per Scheduler        inst   11,616.00   11,616.00   11,616.00
     Executed Instructions                           inst 7,43,424.00 7,43,424.00 7,43,424.00
-    Avg. Issued Instructions Per Scheduler          inst   11,671.38   11,671.95   11,671.72
-    Issued Instructions                             inst 7,46,968.00 7,47,005.00 7,46,990.25
+    Avg. Issued Instructions Per Scheduler          inst   11,670.70   11,672.19   11,671.50
+    Issued Instructions                             inst 7,46,925.00 7,47,020.00 7,46,976.25
     ---------------------------------------- ----------- ----------- ----------- -----------
 
     Section: Launch Statistics
@@ -1633,12 +1633,12 @@
     L2 Sector Promotion Misses                        %    0.00    0.00    0.00
     Shared Memory Spilling Requests                        0.00    0.00    0.00
     Shared Memory Spilling Request Overhead           %    0.00    0.00    0.00
-    Memory Throughput                           Gbyte/s  135.98  138.65  137.66
-    Mem Busy                                          %   48.07   49.30   48.78
-    Max Bandwidth                                     %   93.91   95.47   94.71
+    Memory Throughput                           Gbyte/s  136.62  138.05  137.31
+    Mem Busy                                          %   48.78   48.94   48.86
+    Max Bandwidth                                     %   93.73   94.32   93.99
     L1/TEX Hit Rate                                   %    0.00    0.00    0.00
-    L2 Hit Rate                                       %   50.07   50.12   50.09
-    Mem Pipes Busy                                    %    9.49    9.62    9.57
+    L2 Hit Rate                                       %   50.05   50.08   50.06
+    Mem Pipes Busy                                    %    9.44    9.65    9.55
     --------------------------------------- ----------- ------- ------- -------
 
     Section: Occupancy
@@ -1651,8 +1651,8 @@
     Block Limit Warps                     block    4.00    4.00    4.00
     Theoretical Active Warps per SM        warp   32.00   32.00   32.00
     Theoretical Occupancy                     %  100.00  100.00  100.00
-    Achieved Occupancy                        %   85.01   85.92   85.41
-    Achieved Active Warps Per SM           warp   27.20   27.50   27.33
+    Achieved Occupancy                        %   84.82   85.78   85.48
+    Achieved Active Warps Per SM           warp   27.14   27.45   27.35
     ------------------------------- ----------- ------- ------- -------
 
     Section: PM Sampling
@@ -1668,11 +1668,11 @@
     ---------------------------- ----------- ------- ------- -------
     Metric Name                  Metric Unit Minimum Maximum Average
     ---------------------------- ----------- ------- ------- -------
-    One or More Eligible                   %   34.74   35.07   34.92
+    One or More Eligible                   %   34.71   34.96   34.88
     Issued Warp Per Scheduler                   0.35    0.35    0.35
-    No Eligible                            %   64.93   65.26   65.08
-    Active Warps Per Scheduler          warp    6.77   11.60    8.03
-    Eligible Warps Per Scheduler        warp    0.62    0.62    0.62
+    No Eligible                            %   65.04   65.29   65.12
+    Active Warps Per Scheduler          warp    6.83    6.89    6.85
+    Eligible Warps Per Scheduler        warp    0.62    0.64    0.63
     ---------------------------- ----------- ------- ------- -------
 
     Section: Source Counters
@@ -1698,8 +1698,8 @@
     ---------------------------------------- ----------- ------- ------- -------
     Metric Name                              Metric Unit Minimum Maximum Average
     ---------------------------------------- ----------- ------- ------- -------
-    Warp Cycles Per Issued Instruction             cycle   19.50   33.31   23.01
-    Warp Cycles Per Executed Instruction           cycle   19.59   33.47   23.12
+    Warp Cycles Per Issued Instruction             cycle   19.56   19.72   19.64
+    Warp Cycles Per Executed Instruction           cycle   19.66   19.81   19.74
     Avg. Active Threads Per Warp                           32.00   32.00   32.00
     Avg. Not Predicated Off Threads Per Warp               29.88   29.88   29.88
     ---------------------------------------- ----------- ------- ------- -------
