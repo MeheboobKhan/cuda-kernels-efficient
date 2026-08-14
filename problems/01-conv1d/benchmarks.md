@@ -45,9 +45,36 @@ stitching valid regions back into `C`) was validated against the brute-force
 reference in `tests/validate_fft.py` before being ported to CUDA, same
 process as v2.
 
-Not yet benchmarked on hardware — only N=524288 should take a different
-path than v3 and show a change; the other three sizes should be
-statistically identical to v3's numbers since they run the same code.
+Not yet confirmed with a plain (non-`ncu`) `bench.exe` run — but an `ncu`
+profile of the same `bench.exe 524288 8191 1` methodology used for v2/v3
+lets us reconstruct the real per-call time already, same way as before:
+
+| kernel | duration | count/call | total/call |
+|---|---|---|---|
+| `buildHPad` | 3.76µs | ×1 | 3.76µs |
+| `windowBlocks` | 40.24µs | ×1 | 40.24µs |
+| `postprocess` (H, batch=1) | 6.75µs | ×1 | 6.75µs |
+| `postprocess` (blocks, batch=6) | 33.60µs | ×1 | 33.60µs |
+| `preprocess` (blocks, batch=6) | 33.81µs | ×1 | 33.81µs |
+| `complexMulBroadcast` | 46.42µs | ×1 | 46.42µs |
+| `stitchExtract` | 36.58µs | ×1 | 36.58µs |
+| `regular_fft_factor<128,...>` (H, 2 stages/transform) | 11.82µs | ×2 | 23.64µs |
+| `regular_fft_factor<128,...>` (blocks, fwd+inv) | 48.47µs | ×4 | 193.88µs |
+| `regular_fft_factor<3,...>` (H) | 6.70µs | ×1 | 6.70µs |
+| `regular_fft_factor<3,...>` (blocks, fwd+inv) | 33.59µs | ×2 | 67.18µs |
+| **total (reconstructed)** | | | **~492.6µs** |
+
+vs. v3's measured 731.4µs, that's a **32.7% reduction** — matching the
+cost-model prediction (32% less FFT work) almost exactly, which is good
+independent confirmation the model isn't just numerology. `M=98304`
+factors as `2^15 × 3`, hence only two distinct `regular_fft_factor`
+templates (`128` and `3`) instead of v3's four (`243, 32, 5, 7`) — a
+side-effect of choosing `M` for cost-per-sample rather than tightness-to-L,
+worth noting but not obviously good or bad on its own.
+
+Still want a plain (non-profiled) `bench.exe` run to confirm this
+reconstruction against a real wall-clock number, same sanity check done
+for v2 and v3 (reconstructed vs. measured landed within ~6% both times):
 
 ```powershell
 nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu -lcufft
@@ -59,10 +86,10 @@ nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu -lcufft
 
 | N | K | GPU | Runtime | vs v3 |
 |---|---|-----|---------|-------|
-| 65536  | 8191 | — | — | — |
-| 32768  | 8191 | — | — | — |
-| 131072 | 8191 | — | — | — |
-| 524288 | 8191 | — | — | — |
+| 65536  | 8191 | — | — | (expect ≈ v3's 109.1µs, same code path) |
+| 32768  | 8191 | — | — | (expect ≈ v3's 100.3µs, same code path) |
+| 131072 | 8191 | — | — | (expect ≈ v3's 179.9µs, same code path) |
+| 524288 | 8191 | — | — | (expect ≈ 493µs based on the reconstruction above) |
 
 ## v3: batched forward FFT (superseded by v4, still used as v4's small-N path)
 

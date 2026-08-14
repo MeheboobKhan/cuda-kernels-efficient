@@ -96,7 +96,14 @@ input shapes well outside what's tested here.
 - Shared memory per block: `(TILE + K - 1) * 4` bytes, chosen to fit under
   the device's opt-in max (typically 64–228KB depending on architecture).
 
-## v2: FFT-based (this is what's in `solution.cu` now)
+## v2/v3: FFT-based (this is what's in `solution.cu` now)
+
+v2 was the first FFT rewrite (separate `cufftExecR2C` calls for `A` and
+`B`). v3 (current `solution.cu`) batches those into one `cufftPlanMany`
+call plus a fused pad kernel, based directly on an `ncu` profile of v2 —
+see `benchmarks.md` for the full kernel-by-kernel breakdown that motivated
+the change. The description below covers the shared algorithm; version
+differences are scheduling/kernel-count only, not math.
 
 The tiled kernel above is a real optimization over naive direct convolution,
 but it's still fundamentally O(N·K) — and for K=8191 that's a hard floor of
