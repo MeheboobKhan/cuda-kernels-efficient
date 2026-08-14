@@ -1,62 +1,62 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-// FFT-based conv. Direct O(N*K) is a dead end for K=8191 - even a perfectly
-// tiled kernel tops out in the low milliseconds. FFT turns this into
-// O((N+K) log(N+K)), which is what actually gets you into microseconds.
+// FFT-based conv, v2: batched forward transform.
 //
-// cross-correlation C[i] = sum_j A[i+j-r]*B[j] equals a *reversed-kernel*
-// linear convolution, sliced: pad A with r zeros each side (Apad, len N+K-1),
-// reverse B into Brev (len K, zero padded out to L), full linear conv of
-// Apad and Brev has length N+2K-2, and C is the length-N window starting at
-// offset K-1. Verified against a brute force reference in tests/validate_fft.py.
+// ncu showed ~491us of a ~708us call was the FFT butterfly kernels running
+// *three* times per call (R2C(A), R2C(B), C2R) - R2C(A) and R2C(B) are two
+// independent same-size real transforms with no data dependency, so they
+// don't need to be two separate cufftExecR2C calls. cufftPlanMany batch=2
+// runs them as one call, halving the forward-transform kernel launches
+// (10 -> 5) for the same total FFT work. The other ~217us was five small
+// memory-bound kernels each eating a full launch + DRAM round trip for
+// trivial elementwise work (all at 80-96% DRAM throughput already, i.e.
+// individually bandwidth-saturated) - padBoth below folds two of those
+// into one launch too.
 //
-// plans + device buffers are cached across calls (keyed by FFT size L) since
-// tensara times solution() over repeated calls - paying cuFFT plan setup
-// cost every call would defeat the point.
+// Math is identical to v1 (see tests/validate_fft.py) - this only changes
+// how the same operations are scheduled on the GPU.
 
 namespace conv1d_fft {
 
 struct Cache {
     int L = -1;
-    cufftHandle planR2C = 0;
+    cufftHandle planR2C = 0;  // batched, batch=2 (A and B together)
     cufftHandle planC2R = 0;
-    float* dApad = nullptr;
-    float* dBrev = nullptr;
-    cufftComplex* dSpecA = nullptr;
-    cufftComplex* dSpecB = nullptr;
-    float* dConv = nullptr;
+    float* dAB = nullptr;          // [0,L) = Apad, [L,2L) = Brev
+    cufftComplex* dSpecAB = nullptr;  // [0,specLen) = specA, [specLen,2*specLen) = specB
+    cufftComplex* dSpecC = nullptr;   // specA * specB
+    float* dConv = nullptr;        // length L, ifft output (unnormalized)
 };
 
 static Cache g_cache;
 
-__global__ void zeroPadA(const float* __restrict__ A, float* __restrict__ Apad,
-                          int N, int L, int r) {
+// writes Apad into AB[0,L) and reversed-padded B into AB[L,2L) in one launch
+__global__ void padBoth(const float* __restrict__ A, const float* __restrict__ B,
+                         float* __restrict__ AB, int N, int K, int L, int r) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= L) return;
-    int a = idx - r;
-    Apad[idx] = (a >= 0 && a < N) ? A[a] : 0.0f;
+    if (idx >= 2 * L) return;
+    if (idx < L) {
+        int a = idx - r;
+        AB[idx] = (a >= 0 && a < N) ? A[a] : 0.0f;
+    } else {
+        int j = idx - L;
+        AB[idx] = (j < K) ? B[K - 1 - j] : 0.0f;
+    }
 }
 
-__global__ void reversePadB(const float* __restrict__ B, float* __restrict__ Brev,
-                             int K, int L) {
+__global__ void complexMul(const cufftComplex* __restrict__ specAB,
+                            cufftComplex* __restrict__ out, int specLen) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= L) return;
-    Brev[idx] = (idx < K) ? B[K - 1 - idx] : 0.0f;
-}
-
-__global__ void complexMulInplace(cufftComplex* __restrict__ specA,
-                                   const cufftComplex* __restrict__ specB, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= n) return;
-    cufftComplex a = specA[idx], b = specB[idx];
+    if (idx >= specLen) return;
+    cufftComplex a = specAB[idx];
+    cufftComplex b = specAB[specLen + idx];
     cufftComplex r;
     r.x = a.x * b.x - a.y * b.y;
     r.y = a.x * b.y + a.y * b.x;
-    specA[idx] = r;
+    out[idx] = r;
 }
 
-// cuFFT's C2R doesn't normalize, so divide by L here while we slice the window
 __global__ void extractNormalize(const float* __restrict__ conv, float* __restrict__ C,
                                   int N, int K, int L) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -64,8 +64,6 @@ __global__ void extractNormalize(const float* __restrict__ conv, float* __restri
     C[i] = conv[i + K - 1] / (float)L;
 }
 
-// smallest L >= minL that's 2/3/5/7-smooth, cuFFT's mixed-radix kernels are
-// fast for these and slow for anything with a big prime factor
 static int nextFastSize(int minL) {
     for (int L = minL < 1 ? 1 : minL;; ++L) {
         int x = L;
@@ -92,35 +90,35 @@ extern "C" void solution(const float* A, const float* B, float* C, size_t N_, si
         if (g_cache.L != -1) {
             cufftDestroy(g_cache.planR2C);
             cufftDestroy(g_cache.planC2R);
-            cudaFree(g_cache.dApad);
-            cudaFree(g_cache.dBrev);
-            cudaFree(g_cache.dSpecA);
-            cudaFree(g_cache.dSpecB);
+            cudaFree(g_cache.dAB);
+            cudaFree(g_cache.dSpecAB);
+            cudaFree(g_cache.dSpecC);
             cudaFree(g_cache.dConv);
         }
         int specLen = L / 2 + 1;
-        cudaMalloc(&g_cache.dApad, (size_t)L * sizeof(float));
-        cudaMalloc(&g_cache.dBrev, (size_t)L * sizeof(float));
-        cudaMalloc(&g_cache.dSpecA, (size_t)specLen * sizeof(cufftComplex));
-        cudaMalloc(&g_cache.dSpecB, (size_t)specLen * sizeof(cufftComplex));
+        cudaMalloc(&g_cache.dAB, (size_t)2 * L * sizeof(float));
+        cudaMalloc(&g_cache.dSpecAB, (size_t)2 * specLen * sizeof(cufftComplex));
+        cudaMalloc(&g_cache.dSpecC, (size_t)specLen * sizeof(cufftComplex));
         cudaMalloc(&g_cache.dConv, (size_t)L * sizeof(float));
-        cufftPlan1d(&g_cache.planR2C, L, CUFFT_R2C, 1);
+
+        int n[1] = {L};
+        cufftPlanMany(&g_cache.planR2C, 1, n,
+                      nullptr, 1, L,        // input: contiguous, batch stride L
+                      nullptr, 1, specLen,  // output: contiguous, batch stride specLen
+                      CUFFT_R2C, 2);        // batch=2: A and B together
         cufftPlan1d(&g_cache.planC2R, L, CUFFT_C2R, 1);
         g_cache.L = L;
     }
 
     const int threads = 256;
-    zeroPadA<<<(L + threads - 1) / threads, threads>>>(A, g_cache.dApad, N, L, r);
-    reversePadB<<<(L + threads - 1) / threads, threads>>>(B, g_cache.dBrev, K, L);
+    padBoth<<<(2 * L + threads - 1) / threads, threads>>>(A, B, g_cache.dAB, N, K, L, r);
 
-    cufftExecR2C(g_cache.planR2C, g_cache.dApad, g_cache.dSpecA);
-    cufftExecR2C(g_cache.planR2C, g_cache.dBrev, g_cache.dSpecB);
+    cufftExecR2C(g_cache.planR2C, g_cache.dAB, g_cache.dSpecAB);
 
     int specLen = L / 2 + 1;
-    complexMulInplace<<<(specLen + threads - 1) / threads, threads>>>(
-        g_cache.dSpecA, g_cache.dSpecB, specLen);
+    complexMul<<<(specLen + threads - 1) / threads, threads>>>(g_cache.dSpecAB, g_cache.dSpecC, specLen);
 
-    cufftExecC2R(g_cache.planC2R, g_cache.dSpecA, g_cache.dConv);
+    cufftExecC2R(g_cache.planC2R, g_cache.dSpecC, g_cache.dConv);
 
     extractNormalize<<<(N + threads - 1) / threads, threads>>>(g_cache.dConv, C, N, K, L);
 }

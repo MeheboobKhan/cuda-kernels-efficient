@@ -1,10 +1,53 @@
 # Benchmarks — 01 Conv1D
 
-## v3: batched forward FFT (`solution.cu`) — current
+## v4: overlap-save, used only where it actually wins (`solution.cu`) — current
 
-`cufftPlanMany` batch=2 for `R2C(A)`/`R2C(B)` + fused `padBoth` kernel, built
-directly off the v2 `ncu` profile (see below). Not yet measured — compile
-and run:
+**Revised plan, and why.** The original idea here was overlap-save with
+`B`'s spectrum cached across calls, since all 4 test cases share `K=8191`.
+That caching isn't safe to ship, though: nothing guarantees `B`'s *content*
+is identical across calls just because `K` is — different test cases very
+plausibly use independently-random `B` values, and caching on `K` alone
+risks silently returning wrong answers the moment that assumption breaks.
+So `B`'s transform has to be recomputed fresh every call regardless of
+algorithm, same as v2/v3.
+
+With that correctness constraint priced in, overlap-save's actual benefit
+is smaller and more conditional than the earlier framing suggested. Modeling
+total FFT work (forward+inverse block passes, `2×numBlocks+1` block-sized
+transforms, vs. v3's single `L`-sized transform) at the actual test sizes,
+with a numerically-searched optimal block size `M≈98304` (~12×K):
+
+| N | v3 (single FFT) | v4 (overlap-save) | ratio |
+|---|---|---|---|
+| 32768 | 1.15M | 2.45M | **2.13x worse** |
+| 65536 | 2.01M | 2.45M | **1.22x worse** |
+| 131072 | 3.80M | 4.08M | **1.07x worse** |
+| 524288 | 15.56M | 10.60M | **0.68x — 32% less work** |
+
+(units are an arbitrary FFT-op cost estimate, only the ratios matter). For
+the three smaller cases, a single block already covers the whole output
+(`numBlocks=1`), so overlap-save pays for a full fixed-size `M=98304`
+transform on data that didn't need one — strictly worse than v3's
+right-sized `L`. It only pays off at N=524288, where `numBlocks=6` is
+large enough to amortize the block/overhead ratio below v3's cost.
+
+**So v4 computes both cost estimates at the start of every call (cheap —
+just host-side arithmetic on `N`/`K`) and dispatches to whichever path is
+actually cheaper.** v3's single-FFT code stays as the path used for
+32768/65536/131072; overlap-save only activates for the largest case (and
+any future `N` where the crossover math favors it). This means v4 can't
+regress vs v3 by construction — worst case, every call takes the v3 path
+and nothing changes.
+
+Overlap-save's indexing (windowing `A` into overlapping blocks on the fly,
+zero-padding `B` to the block size once per call, batched block FFT,
+stitching valid regions back into `C`) was validated against the brute-force
+reference in `tests/validate_fft.py` before being ported to CUDA, same
+process as v2.
+
+Not yet benchmarked on hardware — only N=524288 should take a different
+path than v3 and show a change; the other three sizes should be
+statistically identical to v3's numbers since they run the same code.
 
 ```powershell
 nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu -lcufft
@@ -14,30 +57,45 @@ nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu -lcufft
 .\bench.exe 131072 8191
 ```
 
-| N | K | GPU | Runtime | vs v2 |
+| N | K | GPU | Runtime | vs v3 |
 |---|---|-----|---------|-------|
 | 65536  | 8191 | — | — | — |
 | 32768  | 8191 | — | — | — |
 | 131072 | 8191 | — | — | — |
 | 524288 | 8191 | — | — | — |
 
-## v2: FFT-based, unbatched (superseded by v3)
+## v3: batched forward FFT (superseded by v4, still used as v4's small-N path)
 
-Two separate `cufftExecR2C` calls (one for `A`, one for `B`) instead of one
-batched call. Measured on a local **GTX 1650** (Turing, sm_75).
+`cufftPlanMany` batch=2 for `R2C(A)`/`R2C(B)` + fused `padBoth` kernel, built
+directly off the v2 `ncu` profile (see below). Measured on the same local
+**GTX 1650**.
 
-| N | K | GPU | Runtime |
-|---|---|-----|---------|
-| 65536  | 8191 | GTX 1650 | 148.0 µs |
-| 32768  | 8191 | GTX 1650 | 218.8 µs |
-| 131072 | 8191 | GTX 1650 | 192.0 µs |
-| 524288 | 8191 | GTX 1650 | 757.8 µs |
+| N | K | GPU | Runtime | vs v2 |
+|---|---|-----|---------|-------|
+| 65536  | 8191 | GTX 1650 | 109.1 µs | 26.3% faster |
+| 32768  | 8191 | GTX 1650 | 100.3 µs | 54.2% faster |
+| 131072 | 8191 | GTX 1650 | 179.9 µs | 6.3% faster |
+| 524288 | 8191 | GTX 1650 | 731.4 µs | 3.5% faster |
 
-Note the non-monotonic result: 32768 (218.8µs) ran slower than 131072
-(192.0µs) despite 4x less data — traced to the "smallest 7-smooth FFT size"
-search picking an awkward factor decomposition for that specific N. Not yet
-root-caused with `ncu` (only N=524288 was profiled below); worth revisiting
-if v3's numbers show the same inversion.
+Two things worth calling out:
+
+**The non-monotonic v2 result is gone.** 32768 was the anomaly in v2
+(slower than 131072 despite less data); in v3 it's now the *fastest* of all
+four sizes, and the ordering is monotonic with N as expected. This
+confirms the diagnosis: 32768's smaller `L` meant each `regular_fft_factor`
+kernel ran for a shorter genuine duration, so the ~5-10µs fixed launch
+overhead was a *larger fraction* of its total time — exactly the case
+batching helps most. Its win (54.2%) is the biggest of the four for that
+reason.
+
+**The win shrinks as N grows, and that's expected, not a regression.**
+524288 only improved 3.5% — at that size, `L=544320` means each
+`regular_fft_factor` launch already does tens of µs of genuine FFT
+compute, so removing launch overhead saves a small slice of a
+compute-dominated total. The ~490µs of real butterfly work identified in
+the v2 `ncu` profile is essentially unchanged by batching — batching only
+ever targeted the *scheduling* overhead around it, not the FFT math
+itself.
 
 ### `ncu` profile (N=524288, K=8191) — what actually drove the v2→v3 change
 
@@ -79,6 +137,40 @@ launch + DRAM round-trip for trivial elementwise work. `R2C(A)` and
 the 69% bucket, and fusing `zeroPadA`+`reversePadB` targets part of the 31%
 bucket.
 
+### `ncu` profile of v3 (N=524288, K=8191) — confirms batching's limits, motivates v4
+
+Same methodology as the v2 profile above (`--set full`, single non-warmup
+call). Kernel count per call dropped from ~19 to ~15: `padBoth` (1, was 2
+separate kernels), one batched `postprocess_kernel` (1, was 2), the 4
+`regular_fft_factor` stages now appear **twice each** — once at ~2x
+duration for the batched forward pass (`R2C(A)+R2C(B)` together), once at
+roughly the original duration for the still-unbatched `C2R` pass:
+
+| stage | duration | count/call | total/call |
+|---|---|---|---|
+| `padBoth` | 44.99µs | ×1 | 44.99µs |
+| forward batched `regular_fft_factor` (4 stages, ~2x work each) | 115.0+71.0+62.6+63.1 = 311.7µs | ×1 | 311.7µs |
+| `postprocess_kernel` (batched) | 61.20µs | ×1 | 61.2µs |
+| `complexMul` | 44.59µs | ×1 | 44.6µs |
+| `preprocess_kernel` | 31.36µs | ×1 | 31.4µs |
+| C2R `regular_fft_factor` (4 stages, unbatched) | 62.5+36.0+31.6+32.9 = 163.0µs | ×1 | 163.0µs |
+| `extractNormalize` | 31.90µs | ×1 | 31.9µs |
+| **total (reconstructed)** | | | **~688.8µs** (measured: 731.4µs) |
+
+Comparing to the v2 breakdown: batching saved almost nothing on `padBoth`
+(45.9→45.0µs) or `postprocess` (62.3→61.2µs) — those were already mostly
+genuine memory-bound work, not launch overhead. The real saving was in the
+forward `regular_fft_factor` total (327.2→311.7µs, ~15.5µs) — batching
+removed one set of fixed per-launch overhead, but each batched launch still
+does ~2x the work of its unbatched counterpart, so the win was always going
+to be small relative to total runtime. **~475µs (69%) is still genuine FFT
+butterfly compute** (311.7 forward + 163.0 inverse) — essentially
+unchanged in proportion from v2. This is the finding that led to v4: batching
+was worth doing (free, no downside), but it was never going to close most
+of the remaining gap at N=524288, because the gap there isn't overhead
+anymore, it's FFT work itself — which is what v4's overlap-save path
+targets specifically for that size.
+
 ## v1: shared-memory tiled, O(N·K) (`solution_tiled.cu`) — superseded
 
 Measured with the same `tests/bench.cu` harness on the same GTX 1650. Kept
@@ -92,9 +184,9 @@ millisecond-scale, ~20-100x slower than v2.
 | 131072 | 8191 | GTX 1650 | 5.4218 ms | 396.0 |
 | 524288 | 8191 | GTX 1650 | 16.1058 ms | 533.3 |
 
-(GFLOP/s isn't meaningful for v2/v3 — FFT does ~400x fewer FLOPs for the
+(GFLOP/s isn't meaningful for v2/v3/v4 — FFT does ~400x fewer FLOPs for the
 same output, so it's omitted there; wall-clock is the only fair comparison
-across v1 vs v2/v3.)
+across v1 vs v2/v3/v4.)
 
 ## Target
 
@@ -103,5 +195,10 @@ microseconds** on data-center GPUs (L40S/B200/H100/T4). All local numbers
 above are on a GTX 1650 (~2.85 TFLOP/s FP32, ~128 GB/s bandwidth — well
 below any of those cards), so expect a real tensara submission to land
 faster than these local numbers independent of further code changes. Still
-tracking the gap here since the *relative* improvement between v1→v2→v3 is
+tracking the gap here since the *relative* improvement between versions is
 hardware-independent.
+
+At the smaller sizes (32768/65536, ~100-110µs on v3/v4) we're now only
+~2-6x off the leaderboard range even on much weaker hardware — plausibly
+competitive once run on tensara's actual GPUs. 524288 was ~14-40x off on
+v3; v4's overlap-save path targets specifically that gap.
