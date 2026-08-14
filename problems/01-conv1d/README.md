@@ -100,15 +100,3 @@ input shapes well outside what's tested here.
   README for how to run it.
 - `benchmarks.md` — real submission results (fill in after running on
   tensara — see that file for the template).
-
-## Known assumption to double check
-
-The tensara editor's starter template signature is
-`extern "C" void solution(const float* A, const float* B, float* C, /* N, K */)`
-but the exact integer type for `N`/`K` (`size_t` vs `int`) isn't visible in
-the problem statement. This solution assumes `size_t`, matching the
-convention used by tensara's other problems (vector-add, matmul, etc.). If
-tensara's actual harness declares the last two parameters as `int` instead,
-the fix is a one-line signature change — everything else is unaffected
-since `N` and `K` are cast to `int` internally anyway (well within `int`
-range for these sizes).
