@@ -16,6 +16,7 @@ static void checkCuda(cudaError_t err, const char* msg) {
 int main(int argc, char** argv) {
     size_t N = argc > 1 ? std::atoll(argv[1]) : 524288;
     size_t K = argc > 2 ? std::atoll(argv[2]) : 8191;
+    int iters = argc > 3 ? std::atoi(argv[3]) : 20;  // pass 1 when profiling with ncu
 
     std::vector<float> hA(N), hB(K);
     for (auto& v : hA) v = (float)rand() / RAND_MAX - 0.5f;
@@ -36,7 +37,6 @@ int main(int argc, char** argv) {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    const int iters = 20;
     cudaEventRecord(start);
     for (int i = 0; i < iters; ++i) solution(dA, dB, dC, N, K);
     cudaEventRecord(stop);

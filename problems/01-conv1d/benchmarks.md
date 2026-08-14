@@ -1,11 +1,40 @@
 # Benchmarks — 01 Conv1D
 
-Measured with `tests/bench.cu` (20 iterations, averaged, warmup call excluded)
-on a local **GTX 1650** (Turing, sm_75, ~2.85 TFLOP/s FP32 peak, ~128 GB/s
-memory bandwidth). tensara's official runs happen on a **T4** (~8.1 TFLOP/s
-FP32, ~320 GB/s bandwidth), so expect these to undersell the actual
-leaderboard result — submit `solution.cu` at
-https://tensara.org/problems/conv-1d for the number that counts.
+## v2: FFT-based (`solution.cu`) — current
+
+Not yet measured locally. Compile with `-lcufft` and run `bench.exe`:
+
+```powershell
+nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu -lcufft
+.\bench.exe 524288 8191
+.\bench.exe 65536 8191
+.\bench.exe 32768 8191
+.\bench.exe 131072 8191
+```
+
+| N | K | GPU | Runtime | Notes |
+|---|---|-----|---------|-------|
+| 65536  | 8191 | — | — | |
+| 32768  | 8191 | — | — | |
+| 131072 | 8191 | — | — | |
+| 524288 | 8191 | — | — | |
+
+Also worth grabbing the *first-call* (cold, plan-creation-included) time
+separately from the steady-state loop average `bench.cu` reports — the
+cache-across-calls design means those two numbers can differ a lot, and
+which one matters depends on how tensara's harness actually times
+submissions (single call vs. averaged loop).
+
+For reference, tensara leaderboard entries for this problem currently run
+in the **17–52 microsecond** range on data-center GPUs (L40S/B200/H100/T4)
+— that's the target to compare against once a real submission goes in.
+
+## v1: shared-memory tiled, O(N·K) (`solution_tiled.cu`) — superseded
+
+Measured with the same `tests/bench.cu` harness on a local **GTX 1650**
+(Turing, sm_75). Kept here as a reference point for how much the FFT
+rewrite should be expected to win by — these are millisecond-scale, the
+FFT version needs to land in microseconds to be competitive.
 
 | N | K | GPU | Runtime | GFLOP/s |
 |---|---|-----|---------|---------|
@@ -14,32 +43,6 @@ https://tensara.org/problems/conv-1d for the number that counts.
 | 131072 | 8191 | GTX 1650 | 5.4218 ms | 396.0 |
 | 524288 | 8191 | GTX 1650 | 16.1058 ms | 533.3 |
 
-## Reading these numbers
-
-Throughput sits at a near-constant ~392-400 GFLOP/s for the three smaller
-sizes, then jumps to 533 GFLOP/s at the largest N. That's not noise — it's
-the `cudaMemcpyToSymbol` call in `solution()` that re-uploads the 32KB
-kernel to constant memory on *every* invocation (needed because the
-problem's function signature has no persistent state between calls). That
-copy is a fixed ~K-sized cost, so it eats a bigger fraction of the total
-runtime when there's less compute to amortize it over. At N=524288 the
-actual convolution work dominates enough that we get closer to the kernel's
-real steady-state throughput.
-
-On a T4 in tensara's actual test harness, this fixed cost is comparatively
-smaller (higher memory bandwidth moves those 32KB faster), so expect the
-gap between small-N and large-N GFLOP/s to be less pronounced there.
-
-None of these are anywhere near the GTX 1650's ~2.85 TFLOP/s peak, which is
-expected and by design — this kernel targets memory/reuse-bound behavior
-(see the problem README's roofline discussion), not raw FLOP throughput.
-
-## Reproducing
-
-```powershell
-nvcc -O3 -arch=sm_75 -lineinfo -o bench.exe solution.cu tests\bench.cu
-.\bench.exe 524288 8191
-```
-
-Swap `-arch=sm_75` for whatever matches your GPU, and pass different `N K`
-arguments to `bench.exe` (defaults to 524288 8191 if omitted).
+(GFLOP/s isn't a meaningful metric for the FFT version — it does ~400x
+fewer FLOPs for the same output, so a direct GFLOP/s comparison between v1
+and v2 would be misleading. Wall-clock runtime is the only fair comparison.)
