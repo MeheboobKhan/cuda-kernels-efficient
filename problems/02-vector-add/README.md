@@ -64,6 +64,63 @@ per-thread overhead; they don't help a kernel that's already saturating
 the memory bus. Documented here as a real (negative) result, not
 dropped, per the same "keep what you tried" convention as `01-conv1d`.
 
+## v3: float4 + 4x unrolled ILP (`solution_v3.cu`) — locally worse, unverified on real target hardware
+
+Prompted by a look at tensara's live leaderboard: top entries run **~82-86 µs
+on B200**, a card with roughly **60x** this local GTX 1650's memory
+bandwidth (~8 TB/s HBM3e vs. ~148 GB/s GDDR5). That gap matters for which
+optimizations are worth trying:
+
+- On this GTX 1650, v1's scalar accesses already coalesce into full
+  128-byte transactions and saturate the bus — there is nothing left for
+  a wider-transaction kernel to fix, which is exactly what v2 showed.
+- On a part with ~60x the bandwidth, Little's Law says the
+  bytes-in-flight needed to keep the pipe full scales up by roughly the
+  same factor. If per-SM occupancy doesn't naturally supply enough
+  independent outstanding requests, a kernel can under-fill a
+  high-bandwidth bus even while "coalesced" — the standard fix is more
+  memory-level parallelism per thread (issue several independent loads
+  before any dependent store), on top of wide transactions.
+
+v3 does both: each thread issues 4 independent `float4` loads from `A`
+and 4 from `B` (16 floats total) before writing anything back, instead of
+one load/store pair at a time.
+
+**Measured result: v3 is *worse* than v1/v2 on the GTX 1650** — ~126 GB/s
+vs. ~148 GB/s, a ~15% regression, consistent across every VRAM-resident
+size tested. `ptxas -v` shows 38 registers/thread and **zero spilling**,
+so it isn't the obvious register-pressure explanation; the more likely
+cause is that this card's SM already has enough resident warps to hide
+memory latency through ordinary warp-level interleaving, and batching 8
+loads before any store per thread creates a stall bubble that a card
+already saturated at the warp-interleaving level doesn't benefit from —
+without `ncu` (blocked here, see `PROFILE.md`) this is a reasoned
+hypothesis, not a confirmed root cause.
+
+**This result cannot be used to reject v3 for the actual target
+(tensara's grading GPU).** The mechanism v3 targets — hiding memory
+latency behind more in-flight requests — specifically matters *more* the
+higher the bandwidth, i.e. it should matter least on this card and most
+on a B200. A GTX-1650-measured regression is real information about the
+GTX 1650, not proof about a B200. The only way to know whether v3 beats
+v2 on the hardware that actually determines leaderboard rank is to
+submit both and compare — see the "beating the leaderboard" note below.
+
+`solution.cu` stays on v1: it's the only version with *measured* evidence
+of being at-or-above every alternative, on the only hardware available
+to measure on.
+
+## On "beating the leaderboard"
+
+Tensara's leaderboard runs on GPUs (B200 for the current top entries)
+that aren't available locally. Nothing measured here — including v3's
+local regression — can be used to predict standing on that hardware;
+~60x more bandwidth is a different enough regime that conclusions don't
+transfer either direction. Getting a real answer requires an actual
+submission through tensara's own grader. v1, v2, and v3 are all here,
+correctness-checked and ready to paste, specifically so that question can
+be answered empirically rather than guessed at locally.
+
 ## Files
 
 - `solution.cu` — currently mirrors `solution_v1.cu` (the naive kernel),
@@ -71,6 +128,10 @@ dropped, per the same "keep what you tried" convention as `01-conv1d`.
 - `solution_v1.cu` — naive one-thread-per-element baseline.
 - `solution_v2.cu` — `float4`-vectorized variant, kept for reference even
   though it didn't measurably improve on v1 (see above).
+- `solution_v3.cu` — `float4` + 4x-unrolled ILP variant, measured *worse*
+  locally but built for a higher-bandwidth target than this card (see
+  above) — a candidate worth actually submitting to tensara, not a
+  rejected idea.
 - `tests/bench.cu` — GPU benchmark + on-device correctness harness.
 - `benchmarks.md` — measured results.
 - `PROFILE.md` — profiling guide (`ncu`/`nsys`) for this problem.

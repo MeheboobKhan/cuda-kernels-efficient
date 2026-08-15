@@ -8,23 +8,35 @@
 > (2 reads + 1 write, the minimum possible traffic for this problem — no
 > version does any extra passes over the data).
 
-| N | v1 (naive) | v2 (float4) | winner |
-|---|---|---|---|
-| 2^20 (1,048,576)   | 143.30 GB/s | 140.76 GB/s | tie (noise) |
-| 2^22 (4,194,304)   | 147.57 GB/s | 147.53 GB/s | tie |
-| 2^23 (8,388,608)   | 148.17 GB/s | 148.29 GB/s | tie |
-| 2^25 (33,554,432)  | 148.98 GB/s | 148.85 GB/s | tie |
-| 2^26 (67,108,864)  | 148.97 GB/s | 148.70 GB/s | tie |
-| 2^27 (134,217,728) | 146.08 GB/s | 145.60 GB/s | tie |
-| 2^28 (268,435,456) | 146.23 GB/s | 145.63 GB/s | tie |
-| 2^29 (536,870,912) | 33.69 GB/s  | 34.43 GB/s  | tie (both PCIe-paging-bound, see below) |
-| 2^30 (1,073,741,824) | 27.25 GB/s | 27.20 GB/s | tie (both PCIe-paging-bound, see below) |
+| N | v1 (naive) | v2 (float4) | v3 (float4+ILP4) | winner |
+|---|---|---|---|---|
+| 2^20 (1,048,576)   | 143.30 GB/s | 140.76 GB/s | 116.14 GB/s | v1/v2 tie, v3 −19% |
+| 2^22 (4,194,304)   | 147.57 GB/s | 147.53 GB/s | 121.53 GB/s | v1/v2 tie, v3 −18% |
+| 2^23 (8,388,608)   | 148.17 GB/s | 148.29 GB/s | 126.86 GB/s | v1/v2 tie, v3 −15% |
+| 2^25 (33,554,432)  | 148.98 GB/s | 148.85 GB/s | 125.81 GB/s | v1/v2 tie, v3 −16% |
+| 2^26 (67,108,864)  | 148.97 GB/s | 148.70 GB/s | 126.44 GB/s | v1/v2 tie, v3 −15% |
+| 2^27 (134,217,728) | 146.08 GB/s | 145.60 GB/s | 127.76 GB/s | v1/v2 tie, v3 −13% |
+| 2^28 (268,435,456) | 146.23 GB/s | 145.63 GB/s | 126.65 GB/s | v1/v2 tie, v3 −13% |
+| 2^29 (536,870,912) | 33.69 GB/s  | 34.43 GB/s  | 7.15 GB/s  | v1/v2 tie, v3 −79% (see below) |
+| 2^30 (1,073,741,824) | 27.25 GB/s | 27.20 GB/s | 5.51 GB/s | v1/v2 tie, v3 −80% (see below) |
 
 **v2 (float4 vectorization) does not beat v1 at any measured size** — every
 difference is within normal run-to-run noise (≤2%). See `README.md` for
 why: v1 was already bandwidth-saturated at ~148 GB/s, so there was no
 instruction-issue overhead left for wider loads/stores to remove.
-`solution.cu` stays on the v1 kernel (simpler code, identical performance).
+
+**v3 (float4 + 4x unrolled ILP) is measurably worse on this card at every
+size** — a moderate ~13-19% regression when data fits in VRAM, and a much
+larger 79-80% regression once VRAM is oversubscribed (see below). This is
+a real local measurement, but per `README.md`, v3 targets a mechanism
+(hiding memory latency behind more in-flight requests) that matters more
+on higher-bandwidth hardware than this GTX 1650 has — so this result
+should **not** be read as "v3 is a bad idea," only as "v3 is a bad idea
+*on this card*." Whether it wins on tensara's actual grading GPU is
+untested and can only be settled by submitting it there.
+
+`solution.cu` stays on the v1 kernel — the only version with positive or
+neutral evidence at every size actually measured.
 
 ## v1: naive, one thread per element — measured
 
@@ -70,6 +82,49 @@ Confirms the README's prediction: cutting instruction/transaction count
 issue-rate-limited. This is a genuine (negative) result worth keeping —
 same "document what didn't work and why" convention as `01-conv1d`'s v5.
 
+## v3: float4 + 4x unrolled ILP — measured
+
+| N | runtime | GB/s | vs v1 |
+|---|---|---|---|
+| 2^20  | 108.3 µs  | 116.14 | −18.9% |
+| 2^22  | 414.1 µs  | 121.53 | −17.6% |
+| 2^23  | 793.5 µs  | 126.86 | −14.4% |
+| 2^25  | 3.2004 ms | 125.81 | −15.6% |
+| 2^26  | 6.3689 ms | 126.44 | −15.1% |
+| 2^27  | 12.6068 ms| 127.76 | −12.5% |
+| 2^28  | 25.4336 ms| 126.65 | −13.4% |
+| 2^29  | 900.703 ms| 7.15   | −78.8% (VRAM-oversubscribed, see below) |
+| 2^30  | 2339.28 ms| 5.51   | −79.8% (VRAM-oversubscribed, see below) |
+
+`ptxas -v` shows **38 registers/thread, 0 bytes spilled** for the
+unrolled kernel, vs. **8 registers/thread** for v1 — a real difference,
+but on Turing (65,536 32-bit registers/SM, 1024 max resident
+threads/SM) neither number is anywhere near the register count that
+would actually cap occupancy below the hardware thread-count ceiling, so
+register pressure alone doesn't explain a 13-19% gap. The more likely
+explanation: this kernel deliberately batches 8 independent loads (4
+`float4` from `A`, 4 from `B`) before issuing any of the 4 stores, which
+needs enough *other* resident warps to keep the memory pipe fed during
+that batch — and this card's SMs apparently already have enough
+warp-level parallelism from the plain (non-unrolled) kernel that the
+unrolling doesn't add capacity, only adds a bigger per-warp instruction
+burst with a stall at the end waiting for the batch. Stated as a
+reasoned hypothesis, not a confirmed root cause — `ncu` occupancy
+counters would confirm this properly but are blocked in this environment
+(see `PROFILE.md`).
+
+**The regression is far larger (~80%) once VRAM is oversubscribed**
+(2^29/2^30). A plausible mechanism: each thread's working set now spans
+16 floats of `A` and 16 of `B` (64+64=128 bytes) that must all be
+resident before any of the corresponding output is written, versus v1's
+4+4=8 bytes — under WDDM's page-fault-driven demand paging, a wider
+per-thread working set held open simultaneously means more concurrently
+"hot" pages competing for the same oversubscribed working set, likely
+increasing fault/eviction churn. This is even more speculative than the
+in-VRAM case and would need actual paging-fault counters to confirm; it's
+recorded here as a striking, reproducible number, not a settled
+explanation.
+
 ## VRAM oversubscription at N=2^29 / 2^30
 
 This GTX 1650 has 4 GiB of VRAM. Three `N`-length `float` arrays at
@@ -108,9 +163,13 @@ in this file pointing at "bandwidth-saturated, nothing left to trade."
 
 ## Target
 
-Tensara's leaderboard runs on data-center GPUs (T4/L40S/H100/B200) with
-far higher HBM/GDDR6 bandwidth than this GTX 1650's GDDR5. Since v1/v2
-are already at this card's bandwidth ceiling with no algorithmic
-improvement available (see `README.md`), the expected result on tensara
-is the same kernel scaling with that card's bandwidth — not a case where
-further local kernel changes would help.
+Tensara's live leaderboard (checked 2026-08-15) tops out around
+**82-86 µs on B200** for the current top ~15 entries — a card with
+roughly **60x** this GTX 1650's memory bandwidth (~8 TB/s HBM3e vs.
+~148 GB/s GDDR5). None of the local numbers above — including v3's local
+regression — can be used to predict standing on that hardware; a 60x
+bandwidth difference is a different enough regime that conclusions don't
+transfer in either direction (see `README.md`, "On 'beating the
+leaderboard'"). v1, v2, and v3 are all correctness-checked and ready to
+submit; only an actual tensara submission on their B200 can say which
+one (or some further variant) actually wins there.
