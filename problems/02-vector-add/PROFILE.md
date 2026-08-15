@@ -27,22 +27,41 @@ ncu --set full --launch-count 1 --launch-skip 1 -o vecadd_report -f ./bench.exe 
 call so the profiled launch is the timed one, same convention as
 `01-conv1d`.)
 
-**Known local limitation:** `ncu` requires GPU performance-counter access
-that Windows restricts to Administrator by default
-(`NVreg_RestrictProfilingToAdminUsers`). Running `ncu` as a non-admin user
-fails with:
+**Known local limitation (session-dependent):** `ncu` requires GPU
+performance-counter access that Windows restricts to Administrator by
+default (`NVreg_RestrictProfilingToAdminUsers`). A non-admin shell fails
+with:
 
 ```
 ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU
 Performance Counters on the target device 0.
 ```
 
-Fix: re-run from an Administrator shell, or (system-wide, needs an admin
-once) clear the driver's admin-only restriction. Neither was done for
-this problem's local profiling — see `nsys` fallback below, which needs
-no elevated permissions and was sufficient here since the question that
-mattered ("is this kernel bandwidth-saturated?") is answerable from
-wall-clock GB/s and kernel duration alone.
+This blocked `ncu` in the Git Bash session used for most of this
+problem's benchmarking, but **worked fine from an elevated "x64 Native
+Tools Command Prompt"** on the same machine — the restriction is
+per-session/per-privilege-level, not a hard block on the hardware. If
+`ncu` fails in one shell, try again from an Administrator-elevated one
+before assuming it's unavailable. `nsys` (below) needs no elevation
+either way and is the fallback when elevation isn't an option.
+
+**Windows/cmd.exe syntax note:** in a plain `cmd.exe` prompt, drop the
+`./` (`bench.exe` or `.\bench.exe` both work, `./bench.exe` does not),
+use `tests\bench.cu` (backslash) or `tests/bench.cu` (nvcc accepts
+either), and `for %n in (a b c) do cmd %n` instead of bash's
+`for n in a b c; do cmd $n; done`. Env vars are `set VAR=value` then
+`%VAR%`, not `VAR=value` inline or `$VAR`.
+
+**Reading a saved report without re-profiling:** `ncu -o <name> -f`
+writes a binary `.ncu-rep` but (in this `ncu` version) doesn't print the
+metrics table to the console. Get the text version with:
+
+```
+ncu --import <name>.ncu-rep > <name>_summary.txt
+```
+
+This is how `ncu_summary_v3.txt` and `ncu_summary_v4.txt` in this
+directory were produced — same convention as `01-conv1d/ncu_summary.txt`.
 
 `nsys` (Nsight Systems) — timeline / kernel duration, no admin needed
 ----------------------------------------------------------------------
@@ -64,13 +83,22 @@ irrelevant to the timed loop but useful for sanity-checking total
 What to look at
 ----------------
 
-- For this problem specifically, the only question worth asking is
-  **achieved GB/s vs. the card's bandwidth ceiling** — there's no
-  compute, occupancy, or cache-reuse story here (see `README.md` for why).
-  `bench.exe`'s own `%.2f GB/s` output (computed as `3*N*4 bytes /
-  time`, since it's 2 reads + 1 write) is normally enough; `ncu`'s `DRAM
-  Throughput %` metric (when available) is the same information from the
-  hardware counters' point of view, useful mainly as a cross-check.
+- For this problem, the main question is **achieved GB/s vs. the card's
+  bandwidth ceiling** — there's no tiling/shared-memory/cache-reuse story
+  for a pure elementwise kernel (see `README.md` for why). `bench.exe`'s
+  own `%.2f GB/s` output (computed as `3*N*4 bytes / time`) is normally
+  enough for that; `ncu`'s `DRAM Throughput %` is the same information
+  from the hardware counters, useful as a cross-check.
+- **Coalescing is still worth checking even here**, though — it's not
+  automatic just because the kernel is "simple." v3's ~15% regression
+  (see `benchmarks.md`) turned out to be a real coalescing bug in a
+  hand-unrolled kernel, caught by `ncu`'s Memory Workload Analysis Tables
+  section ("only 16.0 of the 32 bytes transmitted per sector are
+  utilized... caused by a stride between threads") and Source Counters
+  ("uncoalesced global accesses, N excessive sectors"). Any time a kernel
+  gives one thread multiple elements to handle, check this section before
+  trusting the access pattern is still coalesced — "looks sequential
+  per-thread" is not the same as "coalesced per-warp-instruction."
 - If GB/s is well below the card's rated bandwidth at large N, suspect
   launch-configuration overhead (too few blocks to saturate all SMs'
   memory pipes) rather than anything algorithmic — there's no algorithm

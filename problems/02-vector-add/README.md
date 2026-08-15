@@ -88,38 +88,63 @@ one load/store pair at a time.
 
 **Measured result: v3 is *worse* than v1/v2 on the GTX 1650** — ~126 GB/s
 vs. ~148 GB/s, a ~15% regression, consistent across every VRAM-resident
-size tested. `ptxas -v` shows 38 registers/thread and **zero spilling**,
-so it isn't the obvious register-pressure explanation; the more likely
-cause is that this card's SM already has enough resident warps to hide
-memory latency through ordinary warp-level interleaving, and batching 8
-loads before any store per thread creates a stall bubble that a card
-already saturated at the warp-interleaving level doesn't benefit from —
-without `ncu` (blocked here, see `PROFILE.md`) this is a reasoned
-hypothesis, not a confirmed root cause.
+size tested. My first guess (below, kept struck-through for the record
+rather than silently deleted) was wrong — real `ncu` data disproved it.
 
-**This result cannot be used to reject v3 for the actual target
-(tensara's grading GPU).** The mechanism v3 targets — hiding memory
-latency behind more in-flight requests — specifically matters *more* the
-higher the bandwidth, i.e. it should matter least on this card and most
-on a B200. A GTX-1650-measured regression is real information about the
-GTX 1650, not proof about a B200. The only way to know whether v3 beats
-v2 on the hardware that actually determines leaderboard rank is to
-submit both and compare — see the "beating the leaderboard" note below.
+~~`ptxas -v` shows 38 registers/thread and zero spilling, so it isn't the
+obvious register-pressure explanation; the more likely cause is that this
+card's SM already has enough resident warps to hide memory latency
+through ordinary warp-level interleaving, and batching 8 loads before any
+store per thread creates a stall bubble that a card already saturated at
+the warp-interleaving level doesn't benefit from.~~
 
-`solution.cu` stays on v1: it's the only version with *measured* evidence
-of being at-or-above every alternative, on the only hardware available
-to measure on.
+**Actual root cause, confirmed by `ncu --set full` once admin/elevated
+counter access was available (see `PROFILE.md` for why my own session
+couldn't get this): a genuine coalescing bug, not a latency/occupancy
+story.** `ncu`'s own diagnostics: *"only 16.0 of the 32 bytes transmitted
+per sector are utilized... could possibly be caused by a stride between
+threads"* on both loads and stores, and *"uncoalesced global accesses
+resulting in 12,582,912 excessive sectors (50% of the total)."* v3 gave
+each thread a contiguous **block** of 4 `float4`s (`A[4g], A[4g+1],
+A[4g+2], A[4g+3]` for thread `g`) — looks sequential per-thread, but at
+any single *unrolled* load instruction, which every thread in a warp
+executes simultaneously, consecutive threads' addresses are `4×16B=64B`
+apart instead of `16B`. Classic block-interleaved-vs-striped indexing
+mistake. Full data in `benchmarks.md` and `ncu_summary_v3.txt`.
+
+## v4: float4 + 4x striped ILP — the coalescing fix (`solution_v4.cu`)
+
+Same idea as v3 (multiple independent `float4` loads in flight per
+thread before any store), fixed to stripe the unroll across the *whole
+grid* instead of across a private per-thread block: thread `g`'s k-th
+access is `A[g + k*totalThreads]`, not `A[g*4+k]`. At any fixed k, that's
+exactly v2's fully-coalesced access pattern — the only change from v2 is
+that each thread now has 4 independent, non-dependent loads outstanding
+before it writes anything, which is the actual thing being tested.
+
+**Measured result: parity with v1/v2** (~148 GB/s, no regression) at
+every size measured so far — see `benchmarks.md`. Expected on this card
+(still bandwidth-saturated either way, same reason v2 didn't win), but
+the point wasn't to win locally — it was to remove the coalescing
+confound before the ILP idea gets tried on hardware where it might
+actually matter. **v4, not v3, is the version worth actually submitting
+to tensara** if the ILP hypothesis is going to be tested at all.
+
+`solution.cu` stays on v1: still the simplest version with *measured*
+evidence of being at-or-above every alternative, on the only hardware
+available to measure on.
 
 ## On "beating the leaderboard"
 
 Tensara's leaderboard runs on GPUs (B200 for the current top entries)
-that aren't available locally. Nothing measured here — including v3's
-local regression — can be used to predict standing on that hardware;
-~60x more bandwidth is a different enough regime that conclusions don't
-transfer either direction. Getting a real answer requires an actual
-submission through tensara's own grader. v1, v2, and v3 are all here,
-correctness-checked and ready to paste, specifically so that question can
-be answered empirically rather than guessed at locally.
+that aren't available locally. Nothing measured here can be used to
+predict standing on that hardware; ~60x more bandwidth is a different
+enough regime that conclusions don't transfer either direction. Getting
+a real answer requires an actual submission through tensara's own
+grader. v1, v2, and v4 are all here, correctness-checked and ready to
+paste (v3 is superseded by v4 — same idea, coalescing bug fixed),
+specifically so that question can be answered empirically rather than
+guessed at locally.
 
 ## Files
 
@@ -128,10 +153,12 @@ be answered empirically rather than guessed at locally.
 - `solution_v1.cu` — naive one-thread-per-element baseline.
 - `solution_v2.cu` — `float4`-vectorized variant, kept for reference even
   though it didn't measurably improve on v1 (see above).
-- `solution_v3.cu` — `float4` + 4x-unrolled ILP variant, measured *worse*
-  locally but built for a higher-bandwidth target than this card (see
-  above) — a candidate worth actually submitting to tensara, not a
-  rejected idea.
+- `solution_v3.cu` — `float4` + 4x-unrolled ILP variant with a
+  coalescing bug (see above); kept as the documented negative result and
+  the reason v4 exists, not deleted once the bug was found.
+- `solution_v4.cu` — same idea as v3, coalescing bug fixed by striping
+  the unroll across the grid; measures at parity with v1/v2 locally and
+  is the actual candidate worth submitting to tensara for the ILP idea.
 - `tests/bench.cu` — GPU benchmark + on-device correctness harness.
 - `benchmarks.md` — measured results.
 - `PROFILE.md` — profiling guide (`ncu`/`nsys`) for this problem.
