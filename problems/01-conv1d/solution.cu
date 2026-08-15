@@ -1,23 +1,227 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 #include <cmath>
-#include <algorithm>
 
-// v4: hybrid single-FFT (v3) / overlap-save dispatch.
+// v5: fully fused overlap-save. One kernel per block does load -> FFT ->
+// spectrum multiply -> IFFT -> store, entirely in shared memory.
 //
-// Overlap-save only wins at N=524288 in this problem's test set - at the
-// three smaller N, a single overlap-save block already covers the whole
-// output (numBlocks=1), so it pays for a full block-sized transform on
-// data that didn't need one, which is strictly worse than v3's
-// right-sized single FFT. See benchmarks.md for the cost derivation.
-// B's spectrum can't be cached across calls even though all test cases
-// share K - nothing guarantees B's *content* matches just because K does,
-// so it's recomputed fresh every call on both paths. Correctness first.
+// Why: v4's ncu profile showed ~57 MB of DRAM traffic per call at N=524288,
+// spread over ~11 passes (every cuFFT stage is a separate kernel that reads
+// and writes the whole array). The minimum possible is ~6.5 MB - read A once
+// with overlap, write C once. That 8.8x traffic gap is the entire remaining
+// gap to the leaderboard; nothing else left is worth more than a few percent.
 //
-// Both paths validated against a brute-force reference in
-// tests/validate_fft.py before being ported here.
+// Real input is packed 2-at-a-time into a half-length complex FFT
+// (z[n] = x[2n] + i*x[2n+1]), so a 16384-point real transform needs only
+// 8192 complex = 64KB of shared memory - exactly the Turing per-block limit.
+// The pack/untangle/multiply/repack algebra including the DC+Nyquist packing
+// is validated against a brute-force reference in tests/validate_fused.py.
+//
+// Falls back to a plain cuFFT path if the device can't give us the shared
+// memory, or if K is too large for a viable block size.
 
-namespace conv1d_fft {
+namespace fused {
+
+constexpr float kTwoPi = 6.283185307179586f;
+
+__device__ __forceinline__ int bitrev(unsigned x, int bits) {
+    return (int)(__brev(x) >> (32 - bits));
+}
+
+// x_padded[g] with the window/zero-pad folded in - no staging buffer
+__device__ __forceinline__ float xAt(const float* __restrict__ A, int g,
+                                      int N, int K, int r) {
+    int apad = g - (K - 1);
+    if (apad < 0 || apad >= N + K - 1) return 0.0f;
+    int a = apad - r;
+    return (a >= 0 && a < N) ? A[a] : 0.0f;
+}
+
+// in-place iterative Cooley-Tukey DIT, expects bit-reversed input
+__device__ __forceinline__ void fftShared(float2* sh, int Mc, int logMc,
+                                           int tid, int nthreads) {
+    int nButter = Mc >> 1;
+    int logLen = 1;
+    for (int len = 2; len <= Mc; len <<= 1, ++logLen) {
+        int half = len >> 1;
+        int logHalf = logLen - 1;
+        // hoisted: len is loop-invariant, so turn the per-butterfly divide
+        // into a multiply. A float divide here costs ~20 instructions and
+        // ran once per butterfly (7M times per launch).
+        const float angStep = -kTwoPi / (float)len;
+        for (int b = tid; b < nButter; b += nthreads) {
+            int j = b & (half - 1);
+            int grp = b >> logHalf;
+            int i = (grp << logLen) + j;
+            int p = i + half;
+            float s, c;
+            __sincosf(angStep * (float)j, &s, &c);
+            float2 u = sh[i], v = sh[p];
+            float2 t;
+            t.x = v.x * c - v.y * s;
+            t.y = v.x * s + v.y * c;
+            sh[i] = make_float2(u.x + t.x, u.y + t.y);
+            sh[p] = make_float2(u.x - t.x, u.y - t.y);
+        }
+        __syncthreads();
+    }
+}
+
+__device__ __forceinline__ float2 cmul(float2 a, float2 b) {
+    return make_float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+// X[k] = 0.5*(Zk + conj(Zm)) - 0.5i*W(k)*(Zk - conj(Zm)),  W(k)=exp(-2pi i k/M)
+__device__ __forceinline__ float2 untangleOne(float2 Zk, float2 Zm, int k, float angStepM) {
+    float2 S = make_float2(Zk.x + Zm.x, Zk.y - Zm.y);
+    float2 D = make_float2(Zk.x - Zm.x, Zk.y + Zm.y);
+    float s, c;
+    __sincosf(-angStepM * (float)k, &s, &c);
+    float p = c * D.x - s * D.y;
+    float q = c * D.y + s * D.x;
+    return make_float2(0.5f * S.x + 0.5f * q, 0.5f * S.y - 0.5f * p);
+}
+
+// Zp[k] = 0.5*(Yk + conj(Ym)) + 0.5i*Wc(k)*(Yk - conj(Ym)), Wc(k)=exp(+2pi i k/M)
+__device__ __forceinline__ float2 repackOne(float2 Yk, float2 Ym, int k, float angStepM) {
+    float2 S = make_float2(Yk.x + Ym.x, Yk.y - Ym.y);
+    float2 D = make_float2(Yk.x - Ym.x, Yk.y + Ym.y);
+    float s, c;
+    __sincosf(angStepM * (float)k, &s, &c);
+    float p = c * D.x - s * D.y;
+    float q = c * D.y + s * D.x;
+    return make_float2(0.5f * S.x - 0.5f * q, 0.5f * S.y + 0.5f * p);
+}
+
+// 1024 threads: shared memory pins us to 1 block/SM, so thread count IS
+// occupancy here. At 39 registers/thread (measured, no spilling) 1024 threads
+// needs 39,936 of the 65,536-register file, so it fits and gives the full
+// 32 warps/SM instead of 16.
+__global__ __launch_bounds__(1024) void fusedConvBlock(
+    const float* __restrict__ A, const float2* __restrict__ H,
+    float* __restrict__ C, int N, int K, int r, int M, int Mc, int logMc, int hop) {
+
+    extern __shared__ float2 sh[];
+    const int tid = threadIdx.x;
+    const int nthreads = blockDim.x;
+    const int base = blockIdx.x * hop;
+
+    // load window + R2C pack, straight into bit-reversed position
+    for (int n = tid; n < Mc; n += nthreads) {
+        float re = xAt(A, base + 2 * n, N, K, r);
+        float im = xAt(A, base + 2 * n + 1, N, K, r);
+        sh[bitrev(n, logMc)] = make_float2(re, im);
+    }
+    __syncthreads();
+
+    fftShared(sh, Mc, logMc, tid, nthreads);
+
+    // untangle -> multiply by H -> repack, pairwise (k, Mc-k).
+    // Each thread owns both slots of its pair exclusively, so no barrier
+    // is needed between the reads and the writes.
+    const int kh = Mc >> 1;
+    const float angStepM = kTwoPi / (float)M;   // hoisted out of the k loop
+    for (int k = tid; k < kh; k += nthreads) {
+        if (k == 0) {
+            // slot 0 carries DC and Nyquist, both purely real
+            float2 Z0 = sh[0];
+            float X0 = Z0.x + Z0.y;
+            float XN = Z0.x - Z0.y;
+            float Y0 = X0 * H[0].x;
+            float YN = XN * H[Mc].x;
+            sh[0] = make_float2(0.5f * (Y0 + YN), 0.5f * (Y0 - YN));
+        } else {
+            int m = Mc - k;
+            float2 Zk = sh[k], Zm = sh[m];
+            float2 Xk = untangleOne(Zk, Zm, k, angStepM);
+            float2 Xm = untangleOne(Zm, Zk, m, angStepM);
+            float2 Yk = cmul(Xk, H[k]);
+            float2 Ym = cmul(Xm, H[m]);
+            sh[k] = repackOne(Yk, Ym, k, angStepM);
+            sh[m] = repackOne(Ym, Yk, m, angStepM);
+        }
+    }
+    if (tid == 0) {  // k = Mc/2 is self-paired
+        float2 Zk = sh[kh];
+        float2 Xk = untangleOne(Zk, Zk, kh, angStepM);
+        float2 Yk = cmul(Xk, H[kh]);
+        sh[kh] = repackOne(Yk, Yk, kh, angStepM);
+    }
+    __syncthreads();
+
+    // inverse via conjugate trick: ifft(Z) = conj(fft(conj(Z)))/Mc
+    for (int n = tid; n < Mc; n += nthreads) sh[n].y = -sh[n].y;
+    __syncthreads();
+    for (int n = tid; n < Mc; n += nthreads) {
+        int rn = bitrev(n, logMc);
+        if (n < rn) {
+            float2 t = sh[n];
+            sh[n] = sh[rn];
+            sh[rn] = t;
+        }
+    }
+    __syncthreads();
+
+    fftShared(sh, Mc, logMc, tid, nthreads);
+
+    // unpack + write the valid (non-overlapping) region straight to C.
+    // local index t maps to C[base + t - 2*(K-1)]; t < K-1 is discarded.
+    const float inv = 1.0f / (float)Mc;
+    const int shift = 2 * (K - 1);
+    for (int n = tid; n < Mc; n += nthreads) {
+        float2 z = sh[n];
+        int t0 = 2 * n, t1 = t0 + 1;
+        if (t0 >= K - 1) {
+            int i = base + t0 - shift;
+            if (i >= 0 && i < N) C[i] = z.x * inv;
+        }
+        if (t1 >= K - 1) {
+            int i = base + t1 - shift;
+            if (i >= 0 && i < N) C[i] = -z.y * inv;  // conj from the inverse trick
+        }
+    }
+}
+
+// H = rfft(reverse(B) zero-padded to M), computed once per call
+__global__ void buildHPad(const float* __restrict__ B, float* __restrict__ Hpad,
+                           int K, int M) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= M) return;
+    Hpad[idx] = (idx < K) ? B[K - 1 - idx] : 0.0f;
+}
+
+struct Cache {
+    int M = -1;
+    cufftHandle planH = 0;
+    float* dHpad = nullptr;
+    float2* dH = nullptr;
+};
+static Cache g_cache;
+
+static int pickM(int K, int maxSharedBytes) {
+    // smallest power of 2 with a usable hop whose half-complex form fits in shared
+    for (int M = 64; M <= (1 << 22); M <<= 1) {
+        if (M < 2 * K) continue;             // hop = M-K+1 must be a decent fraction of M
+        size_t shBytes = (size_t)(M / 2) * sizeof(float2);
+        if (shBytes <= (size_t)maxSharedBytes) return M;
+        break;
+    }
+    return -1;
+}
+
+}  // namespace fused
+
+// ---------------- fallback: plain single-FFT cuFFT path (v3) ----------------
+namespace fallback {
+
+struct Cache {
+    int L = -1;
+    cufftHandle planR2C = 0, planC2R = 0;
+    float* dAB = nullptr;
+    cufftComplex *dSpecAB = nullptr, *dSpecC = nullptr;
+    float* dConv = nullptr;
+};
+static Cache g_fb;
 
 static int nextFastSize(int minL) {
     for (int L = minL < 1 ? 1 : minL;; ++L) {
@@ -27,54 +231,6 @@ static int nextFastSize(int minL) {
         if (x == 1) return L;
     }
 }
-
-// smallest-cost-per-valid-sample block size for overlap-save, searched
-// numerically rather than hardcoded - lands around 12x K for K=8191, but
-// re-derives itself if K changes
-static int bestBlockSize(int K) {
-    static const double mults[] = {1.2, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64};
-    int bestM = -1;
-    double bestCost = 1e300;
-    for (double mult : mults) {
-        int M = nextFastSize((int)(mult * K));
-        if (M < 64) continue;  // avoid degenerate tiny-M cases (e.g. K=1 -> M=1,
-                                // where log2(M)=0 makes the cost model misfire)
-        int hop = M - K + 1;
-        if (hop <= 0) continue;
-        double cost = ((double)M / hop) * std::log2((double)M);
-        if (cost < bestCost) {
-            bestCost = cost;
-            bestM = M;
-        }
-    }
-    if (bestM < 0) bestM = nextFastSize(std::max(2 * K, 64));  // safe fallback
-    return bestM;
-}
-
-static double estimateSingleFFTCost(int N, int K) {
-    int L = nextFastSize(N + 2 * K - 2);
-    return 1.5 * (double)L * std::log2((double)L);
-}
-
-static double estimateOverlapSaveCost(int N, int K, int M) {
-    int hop = M - K + 1;
-    int fullLen = N + 2 * K - 2;
-    int numBlocks = (fullLen + hop - 1) / hop;
-    return 0.5 * (1.0 + 2.0 * numBlocks) * M * std::log2((double)M);
-}
-
-// ---------------- single-FFT path (v3) ----------------
-
-struct CacheSingle {
-    int L = -1;
-    cufftHandle planR2C = 0;
-    cufftHandle planC2R = 0;
-    float* dAB = nullptr;
-    cufftComplex* dSpecAB = nullptr;
-    cufftComplex* dSpecC = nullptr;
-    float* dConv = nullptr;
-};
-static CacheSingle g_single;
 
 __global__ void padBoth(const float* __restrict__ A, const float* __restrict__ B,
                          float* __restrict__ AB, int N, int K, int L, int r) {
@@ -89,15 +245,12 @@ __global__ void padBoth(const float* __restrict__ A, const float* __restrict__ B
     }
 }
 
-__global__ void complexMul(const cufftComplex* __restrict__ specAB,
-                            cufftComplex* __restrict__ out, int specLen) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= specLen) return;
-    cufftComplex a = specAB[idx], b = specAB[specLen + idx];
-    cufftComplex r;
-    r.x = a.x * b.x - a.y * b.y;
-    r.y = a.x * b.y + a.y * b.x;
-    out[idx] = r;
+__global__ void complexMul(const cufftComplex* __restrict__ s, cufftComplex* __restrict__ o,
+                            int specLen) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= specLen) return;
+    cufftComplex a = s[i], b = s[specLen + i];
+    o[i] = make_float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
 __global__ void extractNormalize(const float* __restrict__ conv, float* __restrict__ C,
@@ -107,188 +260,79 @@ __global__ void extractNormalize(const float* __restrict__ conv, float* __restri
     C[i] = conv[i + K - 1] / (float)L;
 }
 
-// ---------------- overlap-save path (v4) ----------------
-
-struct CacheOverlapH {
-    int M = -1;
-    cufftHandle planH = 0;
-    float* dHpad = nullptr;
-    cufftComplex* dHspec = nullptr;
-};
-static CacheOverlapH g_overlapH;
-
-struct CacheOverlapBlocks {
-    int M = -1;
-    int numBlocks = -1;
-    cufftHandle planBlockR2C = 0;
-    cufftHandle planBlockC2R = 0;
-    float* dBlocks = nullptr;
-    cufftComplex* dBlockSpecs = nullptr;
-    float* dBlockConv = nullptr;
-};
-static CacheOverlapBlocks g_overlapBlocks;
-
-__global__ void buildHPad(const float* __restrict__ B, float* __restrict__ Hpad, int K, int M) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= M) return;
-    Hpad[idx] = (idx < K) ? B[K - 1 - idx] : 0.0f;
-}
-
-// blocks[b*M + pos] = x_padded[b*hop + pos], x_padded = [K-1 zeros][Apad][zeros]
-// computed on the fly, no intermediate Apad/x_padded buffer needed
-__global__ void windowBlocks(const float* __restrict__ A, float* __restrict__ blocks,
-                              int N, int K, int r, int M, int hop, int numBlocks) {
-    size_t idx = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
-    size_t total = (size_t)numBlocks * M;
-    if (idx >= total) return;
-    int b = (int)(idx / M);
-    int pos = (int)(idx % M);
-    int globalXIdx = b * hop + pos;
-    int apadIdx = globalXIdx - (K - 1);
-    float val = 0.0f;
-    if (apadIdx >= 0 && apadIdx < N + K - 1) {
-        int aIdx = apadIdx - r;
-        if (aIdx >= 0 && aIdx < N) val = A[aIdx];
+static void run(const float* A, const float* B, float* C, int N, int K, int r) {
+    const int threads = 256;
+    int L = nextFastSize(N + 2 * K - 2);
+    if (g_fb.L != L) {
+        if (g_fb.L != -1) {
+            cufftDestroy(g_fb.planR2C); cufftDestroy(g_fb.planC2R);
+            cudaFree(g_fb.dAB); cudaFree(g_fb.dSpecAB);
+            cudaFree(g_fb.dSpecC); cudaFree(g_fb.dConv);
+        }
+        int specLen = L / 2 + 1;
+        cudaMalloc(&g_fb.dAB, (size_t)2 * L * sizeof(float));
+        cudaMalloc(&g_fb.dSpecAB, (size_t)2 * specLen * sizeof(cufftComplex));
+        cudaMalloc(&g_fb.dSpecC, (size_t)specLen * sizeof(cufftComplex));
+        cudaMalloc(&g_fb.dConv, (size_t)L * sizeof(float));
+        int n[1] = {L};
+        cufftPlanMany(&g_fb.planR2C, 1, n, nullptr, 1, L, nullptr, 1, specLen, CUFFT_R2C, 2);
+        cufftPlan1d(&g_fb.planC2R, L, CUFFT_C2R, 1);
+        g_fb.L = L;
     }
-    blocks[idx] = val;
+    int specLen = L / 2 + 1;
+    padBoth<<<(2 * L + threads - 1) / threads, threads>>>(A, B, g_fb.dAB, N, K, L, r);
+    cufftExecR2C(g_fb.planR2C, g_fb.dAB, g_fb.dSpecAB);
+    complexMul<<<(specLen + threads - 1) / threads, threads>>>(g_fb.dSpecAB, g_fb.dSpecC, specLen);
+    cufftExecC2R(g_fb.planC2R, g_fb.dSpecC, g_fb.dConv);
+    extractNormalize<<<(N + threads - 1) / threads, threads>>>(g_fb.dConv, C, N, K, L);
 }
 
-__global__ void complexMulBroadcast(cufftComplex* __restrict__ blockSpecs,
-                                     const cufftComplex* __restrict__ Hspec,
-                                     int specLen, int numBlocks) {
-    size_t idx = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
-    size_t total = (size_t)numBlocks * specLen;
-    if (idx >= total) return;
-    int f = (int)(idx % specLen);
-    cufftComplex a = blockSpecs[idx], h = Hspec[f];
-    cufftComplex r;
-    r.x = a.x * h.x - a.y * h.y;
-    r.y = a.x * h.y + a.y * h.x;
-    blockSpecs[idx] = r;
-}
-
-// C[i] = full_out[i+K-1], where full_out is the concatenation of each
-// block's valid region (Yb[K-1:]) - see tests/validate_fft.py for the
-// derivation of this index mapping
-__global__ void stitchExtract(const float* __restrict__ blockConv, float* __restrict__ C,
-                               int N, int K, int M, int hop) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= N) return;
-    int fullIdx = i + K - 1;
-    int b = fullIdx / hop;
-    int posInValid = fullIdx % hop;
-    int posInBlock = (K - 1) + posInValid;
-    size_t off = (size_t)b * M + posInBlock;
-    C[i] = blockConv[off] / (float)M;
-}
-
-}  // namespace conv1d_fft
+}  // namespace fallback
 
 extern "C" void solution(const float* A, const float* B, float* C, size_t N_, size_t K_) {
-    using namespace conv1d_fft;
+    using namespace fused;
 
     int N = (int)N_;
     int K = (int)K_;
     if (N <= 0) return;
     int r = (K - 1) / 2;
-    const int threads = 256;
 
-    int M = bestBlockSize(K);
-    double costSingle = estimateSingleFFTCost(N, K);
-    double costOverlap = estimateOverlapSaveCost(N, K, M);
+    int device = 0;
+    cudaGetDevice(&device);
+    int maxShared = 0;
+    cudaDeviceGetAttribute(&maxShared, cudaDevAttrMaxSharedMemoryPerBlockOptin, device);
+    if (maxShared <= 0) maxShared = 48 * 1024;
 
-    if (costOverlap < costSingle) {
-        // ---- overlap-save ----
-        int hop = M - K + 1;
-        int fullLen = N + 2 * K - 2;
-        int numBlocks = (fullLen + hop - 1) / hop;
-        int specLenBlock = M / 2 + 1;
-
-        if (g_overlapH.M != M) {
-            if (g_overlapH.M != -1) {
-                cufftDestroy(g_overlapH.planH);
-                cudaFree(g_overlapH.dHpad);
-                cudaFree(g_overlapH.dHspec);
-            }
-            cudaMalloc(&g_overlapH.dHpad, (size_t)M * sizeof(float));
-            cudaMalloc(&g_overlapH.dHspec, (size_t)specLenBlock * sizeof(cufftComplex));
-            cufftPlan1d(&g_overlapH.planH, M, CUFFT_R2C, 1);
-            g_overlapH.M = M;
-        }
-
-        if (g_overlapBlocks.M != M || g_overlapBlocks.numBlocks != numBlocks) {
-            if (g_overlapBlocks.M != -1) {
-                cufftDestroy(g_overlapBlocks.planBlockR2C);
-                cufftDestroy(g_overlapBlocks.planBlockC2R);
-                cudaFree(g_overlapBlocks.dBlocks);
-                cudaFree(g_overlapBlocks.dBlockSpecs);
-                cudaFree(g_overlapBlocks.dBlockConv);
-            }
-            cudaMalloc(&g_overlapBlocks.dBlocks, (size_t)numBlocks * M * sizeof(float));
-            cudaMalloc(&g_overlapBlocks.dBlockSpecs, (size_t)numBlocks * specLenBlock * sizeof(cufftComplex));
-            cudaMalloc(&g_overlapBlocks.dBlockConv, (size_t)numBlocks * M * sizeof(float));
-            int n[1] = {M};
-            cufftPlanMany(&g_overlapBlocks.planBlockR2C, 1, n, nullptr, 1, M,
-                          nullptr, 1, specLenBlock, CUFFT_R2C, numBlocks);
-            cufftPlanMany(&g_overlapBlocks.planBlockC2R, 1, n, nullptr, 1, specLenBlock,
-                          nullptr, 1, M, CUFFT_C2R, numBlocks);
-            g_overlapBlocks.M = M;
-            g_overlapBlocks.numBlocks = numBlocks;
-        }
-
-        // B's transform: recomputed every call, on purpose (see header comment)
-        buildHPad<<<(M + threads - 1) / threads, threads>>>(B, g_overlapH.dHpad, K, M);
-        cufftExecR2C(g_overlapH.planH, g_overlapH.dHpad, g_overlapH.dHspec);
-
-        size_t totalBlockElems = (size_t)numBlocks * M;
-        windowBlocks<<<(totalBlockElems + threads - 1) / threads, threads>>>(
-            A, g_overlapBlocks.dBlocks, N, K, r, M, hop, numBlocks);
-
-        cufftExecR2C(g_overlapBlocks.planBlockR2C, g_overlapBlocks.dBlocks, g_overlapBlocks.dBlockSpecs);
-
-        size_t totalSpecElems = (size_t)numBlocks * specLenBlock;
-        complexMulBroadcast<<<(totalSpecElems + threads - 1) / threads, threads>>>(
-            g_overlapBlocks.dBlockSpecs, g_overlapH.dHspec, specLenBlock, numBlocks);
-
-        cufftExecC2R(g_overlapBlocks.planBlockC2R, g_overlapBlocks.dBlockSpecs, g_overlapBlocks.dBlockConv);
-
-        stitchExtract<<<(N + threads - 1) / threads, threads>>>(
-            g_overlapBlocks.dBlockConv, C, N, K, M, hop);
+    int M = pickM(K, maxShared);
+    if (M < 0) {  // no viable fused block size on this device
+        fallback::run(A, B, C, N, K, r);
         return;
     }
 
-    // ---- single FFT (v3) ----
-    int minL = N + 2 * K - 2;
-    int L = nextFastSize(minL);
+    int Mc = M / 2;
+    int logMc = 0;
+    while ((1 << logMc) < Mc) ++logMc;
+    int hop = M - K + 1;
+    int numBlocks = (N + 2 * K - 2 + hop - 1) / hop;
+    size_t shBytes = (size_t)Mc * sizeof(float2);
 
-    if (g_single.L != L) {
-        if (g_single.L != -1) {
-            cufftDestroy(g_single.planR2C);
-            cufftDestroy(g_single.planC2R);
-            cudaFree(g_single.dAB);
-            cudaFree(g_single.dSpecAB);
-            cudaFree(g_single.dSpecC);
-            cudaFree(g_single.dConv);
+    if (g_cache.M != M) {
+        if (g_cache.M != -1) {
+            cufftDestroy(g_cache.planH);
+            cudaFree(g_cache.dHpad);
+            cudaFree(g_cache.dH);
         }
-        int specLen = L / 2 + 1;
-        cudaMalloc(&g_single.dAB, (size_t)2 * L * sizeof(float));
-        cudaMalloc(&g_single.dSpecAB, (size_t)2 * specLen * sizeof(cufftComplex));
-        cudaMalloc(&g_single.dSpecC, (size_t)specLen * sizeof(cufftComplex));
-        cudaMalloc(&g_single.dConv, (size_t)L * sizeof(float));
-
-        int n[1] = {L};
-        cufftPlanMany(&g_single.planR2C, 1, n, nullptr, 1, L, nullptr, 1, specLen, CUFFT_R2C, 2);
-        cufftPlan1d(&g_single.planC2R, L, CUFFT_C2R, 1);
-        g_single.L = L;
+        cudaMalloc(&g_cache.dHpad, (size_t)M * sizeof(float));
+        cudaMalloc(&g_cache.dH, (size_t)(Mc + 1) * sizeof(float2));
+        cufftPlan1d(&g_cache.planH, M, CUFFT_R2C, 1);
+        // must be re-set whenever the required size changes, not just once
+        cudaFuncSetAttribute(fusedConvBlock, cudaFuncAttributeMaxDynamicSharedMemorySize,
+                              (int)shBytes);
+        g_cache.M = M;
     }
 
-    padBoth<<<(2 * L + threads - 1) / threads, threads>>>(A, B, g_single.dAB, N, K, L, r);
-    cufftExecR2C(g_single.planR2C, g_single.dAB, g_single.dSpecAB);
+    buildHPad<<<(M + 255) / 256, 256>>>(B, g_cache.dHpad, K, M);
+    cufftExecR2C(g_cache.planH, g_cache.dHpad, (cufftComplex*)g_cache.dH);
 
-    int specLen = L / 2 + 1;
-    complexMul<<<(specLen + threads - 1) / threads, threads>>>(g_single.dSpecAB, g_single.dSpecC, specLen);
-
-    cufftExecC2R(g_single.planC2R, g_single.dSpecC, g_single.dConv);
-
-    extractNormalize<<<(N + threads - 1) / threads, threads>>>(g_single.dConv, C, N, K, L);
+    fusedConvBlock<<<numBlocks, 1024, shBytes>>>(A, g_cache.dH, C, N, K, r, M, Mc, logMc, hop);
 }
