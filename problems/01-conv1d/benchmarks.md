@@ -1,5 +1,231 @@
 # Benchmarks — 01 Conv1D
 
+## Summary (GTX 1650, N=524288, K=8191)
+
+> **Methodology note.** Numbers below are either *plain-timed* (`bench.exe N K`,
+> an averaged 20-iteration loop) or *ncu-reconstructed* (summed kernel
+> durations from a profile). Reconstruction consistently **underestimates** —
+> v2: 6.6% low, v3: 5.8% low, v5.2: 13.8% low — because it misses inter-kernel
+> gaps and launch overhead. The two are only comparable to their own kind.
+> Every table says which it is.
+
+
+| version | approach | runtime | status |
+|---|---|---|---|
+| v1 | shared-memory tiled, O(N·K) | 16,105.8 µs | superseded |
+| v2 | FFT via cuFFT, unbatched | 757.8 µs | superseded |
+| v3 | + batched forward R2C | 731.4 µs | superseded |
+| **v4** | **+ overlap-save when it wins** | **493 µs** | **canonical (`solution.cu`)** |
+| v5 | fully fused single-kernel FFT | 622–627 µs | superseded by v5.1 |
+| v5.1 | + 1024 threads, hoisted divide | 537.4 µs | measured, still 9% over v4 |
+| v5.2 | + two FFT stages per shared round trip | 542.4 µs | correct; wins only at N=32768 |
+
+Local hardware floor for this problem is ~44 µs (6.46 MB of unavoidable
+traffic at the GTX 1650's ~147 GB/s), so v4 sits ~11x above what this card
+can physically do. The tensara leaderboard's 17.67 µs is on an L40S and is
+below this card's floor outright — it is not reachable locally at any level
+of optimization, only on comparable hardware.
+
+
+## v5.2: two butterfly stages per shared-memory round trip — MEASURED, wins at large N
+
+v5.1's profile moved the bottleneck a third time. Both fixes landed exactly as
+intended — occupancy 49.90% → 99.33%, instructions 15,003,318 → 9,421,038
+(−37%) — but runtime only fell 14% (602.7µs → 517.7µs), because the limit is
+now shared-memory bandwidth:
+
+| metric | v5 | v5.1 |
+|---|---|---|
+| L1/TEX throughput | 65.53% | **76.63%** ← the wall |
+| DRAM throughput | 4.43% | 5.17% (idle) |
+| SM busy | 32.21% | 23.76% |
+| warp cycles / instr | 10.55 | 28.02 (waiting on shared) |
+
+A radix-2 stage reads Mc and writes Mc complex values through shared memory,
+13 times per transform. v5.2 fuses **two levels per round trip**: read 4
+elements, do both butterfly levels in registers, write 4 back — 4R+4W instead
+of 8R+8W. For Mc=8192 that is 6 fused passes + 1 trailing single stage = 7
+round trips instead of 13, cutting shared traffic 224.9 MB → 121.1 MB (−46%).
+
+Two things make this low-risk:
+
+- It is **bit-identical** to the existing radix-2 code, not merely close —
+  `tests/validate_radix4.py` compares them at every size up to 2^13 and gets
+  exactly 0.00e+00 difference. It is the same computation reordered.
+- The second level-2 twiddle is free: `W_2L^(j+L/2) == -i · W_2L^j`, so it is
+  a swap-and-negate rather than a third `__sincosf`.
+
+If runtime tracks shared traffic, this lands near **300µs — about 39% under
+v4**, which would be the first time the fused approach actually wins. That
+scaling is an assumption, though; the previous two predictions on this kernel
+were off by 4x and 2x respectively.
+
+**Risk to watch in the next profile:** the fused butterfly holds ~16 float2
+values live, so registers may exceed the 64/thread that 1024 threads allows.
+Check `Registers Per Thread` and `Local Memory Spilling Requests` — if
+spilling is non-zero, drop the launch to 512 threads.
+
+
+### v5.2 plain-timed, all four sizes — the win mostly evaporates
+
+| N | v3 / v4 small-N path | v5.2 | winner |
+|---|---|---|---|
+| 32768 | 100.3 µs | **92.5 µs** | v5.2 (−7.8%) |
+| 65536 | **109.1 µs** | 129.6 µs | v3/v4 (+18.8%) |
+| 131072 | **179.9 µs** | 226.1 µs | v3/v4 (+25.7%) |
+| 524288 | *not plain-timed* | 542.4 µs | **unresolved** |
+
+All plain-timed. Note v4 dispatches to the v3 single-FFT path for the three
+smaller N — its cost model only selects overlap-save at 524288 — so v4 and v3
+are the same code there and the v3 numbers apply to both.
+
+**This inverts the earlier conclusion, and inverts my prediction too.** I
+expected fused to win at large N (many blocks, good occupancy) and lose at
+small N (partial wave). The opposite happened: it wins only at the *smallest*
+size and loses in the middle. The wave-occupancy model I used to predict the
+crossover was simply wrong about which effect dominates.
+
+It also softens the "first fused win" claim from the previous section. That
+comparison was 467.8 vs 492.6 — both ncu-reconstructed, so internally
+consistent, but v4 has never been plain-timed. Applying the observed 6–14%
+reconstruction shortfall puts v4's real N=524288 time somewhere around
+**524–573 µs**, and v5.2 measures 542.4 µs — inside that band. Too close to
+call without the actual measurement.
+
+**Outstanding measurement: `bench.exe 524288 8191` built from `solution.cu`
+(v4).** That single number decides whether v5.2 is worth keeping for large N
+or whether the whole fused line is a documented dead end.
+
+
+### v5.2 result — ncu-reconstructed (GTX 1650, N=524288)
+
+| kernel | duration |
+|---|---|
+| `buildHPad` | 2.48µs |
+| cuFFT `vector_fft_symm_r2c<16384>` (H) | 17.02µs |
+| `fusedConvBlock` | 448.27µs |
+| **total** | **467.8µs** |
+
+467.8µs vs v4's 492.6µs, both ncu-reconstructed — 5.1% faster by that
+measure. See the plain-timed section above for why this overstates the case.
+
+The register risk flagged above did not materialize: 45 registers/thread
+(limit is 64 at 1024 threads), zero spilling, 98.56% occupancy. Instructions
+fell 9,421,038 → 7,180,206 (−23.8%).
+
+Correctness verified on device (`bench --check`, all 7 cases): max relative
+error 1.6e-5 at K=8191, 1.5e-7 at small K. That is normal FP32 FFT
+accumulation against a double-precision direct-summation reference, and is
+~60x inside the 1e-3 bar. Worth noting only if a checker demands better than
+1e-4.
+
+**But the prediction missed again — 300µs estimated, 467.8µs actual (1.6x
+off).** Shared traffic fell 46% while runtime fell only 13.4%, and crucially
+L1/TEX throughput barely moved (76.63% → 75.97%). That says the wall is not
+shared-memory *volume* but shared-memory *transactions* — bank conflicts from
+strided `float2` (8-byte) accesses at power-of-two offsets. Halving the number
+of passes did not halve the per-access conflict cost. Padding the array is the
+standard fix and is not available here: the buffer is exactly 65,536 bytes,
+the entire Turing per-block budget, with no room for pad words.
+
+Three predictions on this kernel have now been off by 4x, 2x and 1.6x, always
+optimistic. Treat any further estimate as a direction only.
+
+### Open: does v5.2 win at the smaller N?
+
+Only N=524288 has been measured. The fused kernel launches
+`ceil((N+2K−2)/hop)` blocks with hop=8194, and a partial wave costs the same
+as a full one, so small N pays for 16 SMs while using a handful:
+
+| N | blocks | waves | est. fused | v4 actual | likely |
+|---|---|---|---|---|---|
+| 32768 | 6 | 0.38 | ~128µs | 100.3µs | v4 |
+| 65536 | 10 | 0.62 | ~128µs | 109.1µs | v4 |
+| 131072 | 18 | 1.12 | ~142µs | 179.9µs | fused |
+| 524288 | 66 | 4.12 | 468µs (measured) | 493.0µs | fused |
+
+If that holds, the right final shape is the same crossover dispatch v4 already
+uses internally — pick fused above roughly one wave's worth of blocks, cuFFT
+below it. Needs the other three measurements before committing.
+
+
+## v5: fully fused overlap-save (`solution_fused.cu`) — experiment, REJECTED (slower)
+
+Hardware runs (GTX 1650, N=524288, `ncu`-reconstructed). Two runs of the same
+binary: 627.4us and 622.3us.
+
+| kernel | duration | total/call |
+|---|---|---|
+| `buildHPad` | 2.45µs | 2.45µs |
+| cuFFT `vector_fft_symm_r2c<16384>` (H) | 17.10µs | 17.10µs |
+| `fusedConvBlock` | 607.86µs | 607.86µs |
+| **total** | | **~627.4µs** |
+
+**vs v4's 493µs, that is 27% slower.** My pre-run estimate was 100–150µs; it
+was wrong by ~4x, and the reason is instructive.
+
+**The design goal was met.** DRAM traffic collapsed exactly as predicted:
+
+| | v4 | v5 |
+|---|---|---|
+| DRAM throughput | 95–97% (saturated) | **4.46%** |
+| achieved bandwidth | 137 GB/s | **7.09 GB/s** |
+
+That is a ~19x reduction in memory traffic — the fused kernel really does read
+A once and write C once. The problem is that it replaced a memory bottleneck
+with a worse instruction-issue bottleneck:
+
+| metric | value | reading |
+|---|---|---|
+| L1/TEX throughput | 65.70% | highest utilization — shared-memory butterflies |
+| Compute (SM) throughput | 32.30% | |
+| "No Eligible" warp cycles | 62.07% | latency-starved |
+| Achieved occupancy | 49.77% | only 16 of 32 warps/SM |
+| instructions / warp-butterfly | ~68 | should be ~15–20 |
+
+Two of those were my bugs, both now fixed:
+
+1. **512 threads was wrong.** I picked it defensively to avoid register
+   spilling. The profile shows 39 registers/thread and *zero* spilling, so
+   1024 threads (39,936 of the 65,536-register file) fits fine. Since 64KB of
+   shared memory pins us to 1 block/SM, thread count *is* occupancy here —
+   512 threads was throwing away half the SM for no reason, on a kernel the
+   profile says is latency-bound.
+2. **A float divide inside the butterfly inner loop.** `-2π*j/len` — `len` is
+   loop-invariant but `j` isn't, so the compiler can't hoist it. An IEEE float
+   divide is ~20 instructions and it ran 7,028,736 times per launch. Now
+   hoisted to a reciprocal multiply.
+
+Measured twice (627.4us, 622.3us - same binary, run-to-run noise only), so the
+result is settled: **on Turing, the fused radix-2 kernel loses to cuFFT.**
+
+The two fixes above are written but have not been compiled and run yet, so
+their effect is unknown. Even at the optimistic end (~250us) v5 would still be
+~6x off the 44us traffic floor, because the structural problem survives them:
+a radix-2 FFT makes 26 round trips through 64KB of shared memory (13 stages x
+forward and inverse), while cuFFT uses radix-128 butterflies held in
+registers. That is the real bar - beating a vendor library at its own kernel -
+and radix-2 does not clear it.
+
+### Why this is kept as a documented negative result
+
+The fused design *did* do what it was built to do: traffic dropped 19x and the
+kernel stopped being memory-bound at all (4.46% DRAM utilization vs v4's 95%
+saturation). It lost anyway, because removing the memory bottleneck exposed a
+compute inefficiency that the memory wall had been hiding. The lesson
+generalizes: "fewer passes over DRAM" is only a win if the fused compute is
+competitive with what the library was doing during those passes.
+
+Getting to leaderboard numbers this way needs radix-4/radix-8 butterflies with
+register-resident data between exchanges - i.e. reimplementing most of what
+NVIDIA's cuFFTDx already does. The tradeoff also shifts on a card with more
+shared memory per SM (L40S has 100KB vs Turing's 64KB): a larger block fits,
+which improves the overlap efficiency hop/M at the same time.
+
+**v5 as originally written loses. Whether the fused approach wins at all
+comes down to v5.2 above.**
+
+
 ## v4: overlap-save, used only where it actually wins (`solution.cu`) — current
 
 **Revised plan, and why.** The original idea here was overlap-save with
